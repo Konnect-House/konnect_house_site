@@ -1,25 +1,13 @@
-// import React from 'react';
-// import Navbar from './components/Navbar';
-// import Hero from './components/Hero';
+import HeroSection from "./components/HeroSection";
+// import Footer from "./components/Footer";
 
-// function App() {
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <Navbar />
-//       <Hero />
-//     </div>
-//   );
-// }
-
-// export default App;
-import Header from './components/Header';
-import HeroSection from './components/HeroSection';
-
-export default function App() {
-  return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* <Header /> */}
-      <HeroSection />
-    </div>
-  );
+function App() {
+    return (
+        <div>
+            <HeroSection />
+            {/* <Footer /> */}
+        </div>
+    );
 }
+
+export default App;
