@@ -26,13 +26,13 @@ const Footer = () => {
                 <a href="#" className="hover:underline">
                     Conditions
                 </a>
-                <span>Copyright © 2025 Konnect House</span>
+                <span>Copyright © 2026 Konnect House</span>
             </div>
 
             {/* Right - Réseaux sociaux */}
             <div className="flex items-center space-x-4">
                 <a
-                    href="https://wa.me/243829790981?text=Salut"
+                    href="https://wa.me/243821616193?text=Menu"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-2 border border-white rounded-full hover:bg-white hover:text-[#0d1b2a] transition"
