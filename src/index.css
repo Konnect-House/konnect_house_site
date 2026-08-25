@@ -1,0 +1,202 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* ===== Brand Kit Konnect House ===== */
+:root {
+  /* Brand */
+  --kh-blue: #011A66;
+  --kh-blue-2: #3478AB;
+  --kh-sky: #66CAE4;
+  --kh-white: #FFFFFF;
+  --kh-dark-text: #172033;
+
+  /* Semantics — light mode (default) */
+  --kh-bg: #F6F9FF;
+  --kh-bg-soft: #FFFFFF;
+  --kh-surface: rgba(255, 255, 255, 0.85);
+  --kh-border: rgba(1, 26, 102, 0.14);
+  --kh-text: #172033;
+  --kh-text-muted: rgba(23, 32, 51, 0.75);
+  --kh-accent: #66CAE4;
+  --kh-primary: #011A66;
+  --kh-secondary: #3478AB;
+
+  /* Polices */
+  --font-display: 'Montserrat', system-ui, sans-serif;
+  --font-body: 'Montserrat', system-ui, sans-serif;
+
+  font-family: var(--font-body);
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--kh-text);
+  background-color: var(--kh-bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
+}
+
+.snap-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.snap-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100vh;
+  height: 100vh;
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-snap-type: none;
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--kh-bg);
+  color: var(--kh-text);
+  font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--kh-primary);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ===== Utilitaires custom ===== */
+.kh-gradient-text {
+  background: linear-gradient(135deg, var(--kh-blue) 0%, var(--kh-sky) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.kh-glass {
+  background: var(--kh-surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--kh-border);
+}
+
+.kh-glow {
+  box-shadow: 0 8px 32px -8px rgba(1, 26, 102, 0.35);
+}
+
+.kh-mesh-bg {
+  background:
+    radial-gradient(at 20% 20%, rgba(102, 202, 228, 0.22) 0px, transparent 45%),
+    radial-gradient(at 80% 10%, rgba(52, 120, 171, 0.18) 0px, transparent 45%),
+    radial-gradient(at 50% 90%, rgba(102, 202, 228, 0.14) 0px, transparent 45%);
+}
+
+html[data-theme="light"] .kh-mesh-bg {
+  background:
+    radial-gradient(at 20% 20%, rgba(102, 202, 228, 0.45) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(52, 120, 171, 0.30) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(102, 202, 228, 0.25) 0px, transparent 50%);
+}
+
+.kh-gradient-btn {
+  background: linear-gradient(135deg, var(--kh-blue) 0%, var(--kh-blue-2) 100%);
+  color: var(--kh-white);
+}
+
+.kh-gradient-btn:hover {
+  background: linear-gradient(135deg, var(--kh-blue-2) 0%, var(--kh-sky) 100%);
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--kh-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(1, 26, 102, 0.35);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(1, 26, 102, 0.55);
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== DARK MODE ===== */
+[data-theme="dark"] {
+  --kh-bg: #0B1021;
+  --kh-bg-soft: #111827;
+  --kh-surface: rgba(255, 255, 255, 0.04);
+  --kh-border: rgba(255, 255, 255, 0.08);
+  --kh-text: #F8FAFF;
+  --kh-text-muted: rgba(248, 250, 255, 0.70);
+  --kh-accent: #66CAE4;
+  --kh-primary: #66CAE4;
+  --kh-secondary: #3478AB;
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+  color: var(--kh-white);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(102, 202, 228, 0.35);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 202, 228, 0.55);
+}
