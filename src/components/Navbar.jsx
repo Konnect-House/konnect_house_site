@@ -19,9 +19,10 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
-  const ownerHref = user?.role === "PROVIDER" || user?.role === "ADMIN"
-    ? "/proprietaire"
-    : "/proprietaire/connexion";
+  const ownerHref =
+    user?.role === "PROVIDER" || user?.role === "ADMIN"
+      ? "/proprietaire"
+      : "/proprietaire/connexion";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -29,6 +30,13 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
 
   const handleNavClick = (href) => {
     setMenuOpen(false);
@@ -42,25 +50,26 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "kh-glass py-3 shadow-md"
-          : "bg-transparent py-5"
+        menuOpen
+          ? "bg-[var(--kh-bg)] py-4"
+          : scrolled
+            ? "kh-glass py-3 shadow-md"
+            : "bg-transparent py-5"
       }`}
     >
       <nav className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between">
-        {/* Logo */}
         <a
           href="#top"
           onClick={(e) => {
             e.preventDefault();
+            setMenuOpen(false);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="flex items-center gap-2 shrink-0"
+          className="flex items-center gap-2 shrink-0 relative z-[70]"
         >
           <img src={logo} alt="Konnect House" className="h-10 w-auto" />
         </a>
 
-        {/* Liens desktop */}
         <ul className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => (
             <li key={link.href}>
@@ -74,8 +83,7 @@ export default function Navbar() {
           ))}
         </ul>
 
-        {/* Actions desktop */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3">
           <button
             onClick={toggle}
             aria-label="Changer de thème"
@@ -101,58 +109,67 @@ export default function Navbar() {
           </a>
         </div>
 
-        {/* Burger mobile */}
         <button
-          className="lg:hidden text-[var(--kh-text)] text-2xl p-1"
+          className="lg:hidden relative z-[70] text-[var(--kh-text)] text-2xl p-1"
           onClick={() => setMenuOpen((v) => !v)}
-          aria-label="Menu"
+          aria-label={menuOpen ? "Fermer le menu" : "Menu"}
         >
           {menuOpen ? <FiX /> : <FiMenu />}
         </button>
       </nav>
 
-      {/* Menu mobile */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="lg:hidden overflow-hidden kh-glass mx-4 mt-3 rounded-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="lg:hidden fixed inset-0 z-[60] bg-[var(--kh-bg)]"
           >
-            <ul className="flex flex-col p-4 gap-1">
-              {navLinks.map((link) => (
-                <li key={link.href}>
-                  <button
-                    onClick={() => handleNavClick(link.href)}
-                    className="w-full text-left px-4 py-3 rounded-xl text-[var(--kh-text-muted)] hover:bg-[var(--kh-surface)] hover:text-[var(--kh-primary)] transition font-semibold"
+            <div className="h-full overflow-y-auto pt-24 px-6 pb-10">
+              <ul className="flex flex-col gap-1 max-w-md mx-auto">
+                {navLinks.map((link) => (
+                  <li key={link.href}>
+                    <button
+                      onClick={() => handleNavClick(link.href)}
+                      className="w-full text-left px-4 py-4 rounded-xl text-[var(--kh-text)] hover:bg-[var(--kh-bg-soft)] transition font-semibold text-lg"
+                    >
+                      {link.label}
+                    </button>
+                  </li>
+                ))}
+                <li className="mt-4">
+                  <Link
+                    to={ownerHref}
+                    onClick={() => setMenuOpen(false)}
+                    className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
                   >
-                    {link.label}
+                    Espace propriétaire
+                  </Link>
+                </li>
+                <li className="mt-2">
+                  <a
+                    href="https://wa.me/243821616193?text=Menu"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-center px-4 py-3 rounded-xl text-white font-bold kh-gradient-btn"
+                  >
+                    <FaWhatsapp className="inline mr-2 text-base" />
+                    Démarrer sur WhatsApp
+                  </a>
+                </li>
+                <li className="mt-4 flex justify-center">
+                  <button
+                    onClick={toggle}
+                    aria-label="Changer de thème"
+                    className="w-12 h-12 rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-soft)] flex items-center justify-center text-[var(--kh-text)]"
+                  >
+                    {theme === "dark" ? <FiSun /> : <FiMoon />}
                   </button>
                 </li>
-              ))}
-              <li className="mt-2">
-                <Link
-                  to={ownerHref}
-                  onClick={() => setMenuOpen(false)}
-                  className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold hover:bg-[var(--kh-surface)]"
-                >
-                  Espace propriétaire
-                </Link>
-              </li>
-              <li>
-                <a
-                  href="https://wa.me/243821616193?text=Menu"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-center px-4 py-3 rounded-xl text-white font-bold kh-gradient-btn"
-                >
-                  <FaWhatsapp className="inline mr-2 text-base" />
-                  Démarrer sur WhatsApp
-                </a>
-              </li>
-            </ul>
+              </ul>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

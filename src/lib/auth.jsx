@@ -51,15 +51,24 @@ export function AuthProvider({ children }) {
         setUser(res.data);
         return res;
       },
-      async register(payload) {
-        const res = await api("/auth/register/provider", {
+      async googleProvider(credential) {
+        const res = await api("/auth/google/provider", {
           method: "POST",
-          body: payload,
+          body: { credential },
         });
         localStorage.setItem(KEY, res.token);
         setToken(res.token);
         setUser(res.data);
         return res;
+      },
+      async completeOnboarding(payload) {
+        const data = await api("/auth/provider/onboarding", {
+          token,
+          method: "PATCH",
+          body: payload,
+        });
+        setUser(data);
+        return data;
       },
       logout() {
         localStorage.removeItem(KEY);
