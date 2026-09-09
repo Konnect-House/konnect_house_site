@@ -5,6 +5,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { FiMenu, FiX, FiSun, FiMoon } from "react-icons/fi";
 import useTheme from "../hooks/useTheme";
 import { useAuth } from "../lib/auth";
+import { useAuthModal } from "../lib/authModal";
 import logo from "../assets/removebg.png";
 
 const navLinks = [
@@ -19,10 +20,8 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { user } = useAuth();
-  const ownerHref =
-    user?.role === "PROVIDER" || user?.role === "ADMIN"
-      ? "/proprietaire"
-      : "/proprietaire/connexion";
+  const { openLogin } = useAuthModal();
+  const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -92,12 +91,22 @@ export default function Navbar() {
             {theme === "dark" ? <FiSun /> : <FiMoon />}
           </button>
 
-          <Link
-            to={ownerHref}
-            className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)] transition-colors"
-          >
-            Espace propriétaire
-          </Link>
+          {ownerLoggedIn ? (
+            <Link
+              to="/proprietaire"
+              className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)] transition-colors"
+            >
+              Espace propriétaire
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={openLogin}
+              className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)] transition-colors"
+            >
+              Espace propriétaire
+            </button>
+          )}
           <a
             href="https://wa.me/243821616193?text=Menu"
             target="_blank"
@@ -140,13 +149,26 @@ export default function Navbar() {
                   </li>
                 ))}
                 <li className="mt-4">
-                  <Link
-                    to={ownerHref}
-                    onClick={() => setMenuOpen(false)}
-                    className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
-                  >
-                    Espace propriétaire
-                  </Link>
+                  {ownerLoggedIn ? (
+                    <Link
+                      to="/proprietaire"
+                      onClick={() => setMenuOpen(false)}
+                      className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
+                    >
+                      Espace propriétaire
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openLogin();
+                      }}
+                      className="w-full text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
+                    >
+                      Espace propriétaire
+                    </button>
+                  )}
                 </li>
                 <li className="mt-2">
                   <a

@@ -10,9 +10,9 @@ export default function RequireProvider() {
       </div>
     );
   }
-  if (!token) return <Navigate to="/proprietaire/connexion" replace />;
+  if (!token) return <Navigate to="/?auth=connexion" replace />;
   if (user && user.role !== "PROVIDER" && user.role !== "ADMIN") {
-    return <Navigate to="/proprietaire/connexion" replace />;
+    return <Navigate to="/?auth=connexion" replace />;
   }
   return <Outlet />;
 }

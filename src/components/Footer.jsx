@@ -5,7 +5,8 @@ import {
   FaLinkedinIn,
   FaFacebookF,
 } from "react-icons/fa";
-import logo from "../assets/removebg.png";
+import { useAuth } from "../lib/auth";
+import { useAuthModal } from "../lib/authModal";
 
 const socials = [
   {
@@ -31,6 +32,9 @@ const socials = [
 ];
 
 export default function Footer() {
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+  const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
   return (
     <footer className="relative border-t border-[var(--kh-border)] py-12 px-6 lg:px-10 bg-[var(--kh-bg)]">
       <div className="max-w-7xl mx-auto">
@@ -46,12 +50,22 @@ export default function Footer() {
 
           {/* Liens */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[var(--kh-text-muted)]">
-            <Link
-              to="/proprietaire/connexion"
-              className="hover:text-[var(--kh-primary)] transition"
-            >
-              Espace propriétaire
-            </Link>
+            {ownerLoggedIn ? (
+              <Link
+                to="/proprietaire"
+                className="hover:text-[var(--kh-primary)] transition"
+              >
+                Espace propriétaire
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="hover:text-[var(--kh-primary)] transition"
+              >
+                Espace propriétaire
+              </button>
+            )}
             <a href="#" className="hover:text-[var(--kh-primary)] transition">
               Politique de confidentialité
             </a>

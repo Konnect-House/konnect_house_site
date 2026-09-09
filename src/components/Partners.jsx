@@ -1,11 +1,16 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FiHome, FiCheckCircle } from "react-icons/fi";
+import { useAuth } from "../lib/auth";
+import { useAuthModal } from "../lib/authModal";
 
 const partnerWhatsapp =
   "https://wa.me/243821616193?text=Bonjour%20Konnect%20House%2C%20je%20suis%20propri%C3%A9taire%20et%20je%20veux%20devenir%20partenaire";
 
 export default function Partners() {
+  const { user } = useAuth();
+  const { openLogin, openRegister } = useAuthModal();
+  const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
   return (
     <section id="partners" className="relative py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-10">
@@ -72,18 +77,31 @@ export default function Partners() {
               de passage (5 photos minimum).
             </p>
             <div className="space-y-3">
-              <Link
-                to="/proprietaire/inscription"
-                className="w-full kh-gradient-btn kh-glow flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-base font-bold text-white transition-transform hover:scale-[1.02]"
-              >
-                Créer mon compte propriétaire
-              </Link>
-              <Link
-                to="/proprietaire/connexion"
-                className="w-full flex items-center justify-center px-6 py-4 rounded-xl text-base font-bold text-[var(--kh-primary)] border border-[var(--kh-border)] hover:bg-[var(--kh-bg)]"
-              >
-                J’ai déjà un compte
-              </Link>
+              {ownerLoggedIn ? (
+                <Link
+                  to="/proprietaire"
+                  className="w-full kh-gradient-btn kh-glow flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-base font-bold text-white transition-transform hover:scale-[1.02]"
+                >
+                  Gérer mes logements
+                </Link>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={openRegister}
+                    className="w-full kh-gradient-btn kh-glow flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-base font-bold text-white transition-transform hover:scale-[1.02]"
+                  >
+                    Créer mon compte propriétaire
+                  </button>
+                  <button
+                    type="button"
+                    onClick={openLogin}
+                    className="w-full flex items-center justify-center px-6 py-4 rounded-xl text-base font-bold text-[var(--kh-primary)] border border-[var(--kh-border)] hover:bg-[var(--kh-bg)]"
+                  >
+                    J’ai déjà un compte
+                  </button>
+                </>
+              )}
             </div>
             <div className="mt-6 pt-6 border-t border-[var(--kh-border)] text-center">
               <p className="text-sm text-[var(--kh-text-muted)] mb-3">

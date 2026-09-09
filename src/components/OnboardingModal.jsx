@@ -1,24 +1,28 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaWhatsapp, FaHome, FaArrowRight } from "react-icons/fa";
 import { FiCheck, FiX } from "react-icons/fi";
 import logo from "../assets/removebg.png";
+import { useAuthModal } from "../lib/authModal";
 
 const SEEKER_LINK = "https://wa.me/243821616193?text=Menu";
 const BACKDROP_KEY = "kh-onboarding-seen";
 
 export default function OnboardingModal() {
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(true);
+  const { mode: authMode, openRegister } = useAuthModal();
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (new URLSearchParams(window.location.search).get("auth")) return false;
+    return !sessionStorage.getItem(BACKDROP_KEY);
+  });
   const [mode, setMode] = useState(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const seen = sessionStorage.getItem(BACKDROP_KEY);
-    if (seen) setIsOpen(false);
-  }, []);
+    if (seen || authMode) setIsOpen(false);
+  }, [authMode]);
 
   const close = () => {
     setIsOpen(false);
@@ -33,7 +37,7 @@ export default function OnboardingModal() {
 
   const chooseOwner = () => {
     close();
-    navigate("/proprietaire/inscription");
+    openRegister();
   };
 
   return (

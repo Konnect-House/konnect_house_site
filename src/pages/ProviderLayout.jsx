@@ -1,8 +1,10 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
+import { useAuthModal } from "../lib/authModal";
 
 export default function ProviderLayout() {
   const { user, logout } = useAuth();
+  const { openLogin } = useAuthModal();
   const navigate = useNavigate();
 
   return (
@@ -39,12 +41,13 @@ export default function ProviderLayout() {
                 </button>
               </>
             ) : (
-              <Link
-                to="/proprietaire/connexion"
+              <button
+                type="button"
+                onClick={openLogin}
                 className="text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)]"
               >
                 Connexion
-              </Link>
+              </button>
             )}
           </nav>
         </div>
