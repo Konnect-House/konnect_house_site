@@ -7,6 +7,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
+import logo from "../assets/removebg.png";
 
 const socials = [
   {
