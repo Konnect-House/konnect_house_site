@@ -1,55 +1,17 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaWhatsapp, FaHome, FaArrowRight, FaArrowLeft } from "react-icons/fa";
-import { FiCheck, FiX, FiMessageCircle } from "react-icons/fi";
+import { FaWhatsapp, FaHome, FaArrowRight } from "react-icons/fa";
+import { FiCheck, FiX } from "react-icons/fi";
 import logo from "../assets/removebg.png";
 
 const SEEKER_LINK = "https://wa.me/243821616193?text=Menu";
 const BACKDROP_KEY = "kh-onboarding-seen";
 
-const steps = [
-  {
-    title: "Vos coordonnées",
-    fields: [
-      { name: "name", label: "Nom complet", type: "text", placeholder: "Ex: Jean Mbemba" },
-      { name: "phone", label: "Téléphone WhatsApp", type: "tel", placeholder: "Ex: +243 82 161 61 93" },
-    ],
-  },
-  {
-    title: "Votre logement",
-    fields: [
-      { name: "propertyType", label: "Type de logement", type: "select", options: ["Appartement", "Maison", "Studio", "Villa / Lodge", "Espace événementiel"] },
-      { name: "location", label: "Quartier / Commune", type: "text", placeholder: "Ex: Gombe, Limete, Ngaliema..." },
-    ],
-  },
-  {
-    title: "Détails",
-    fields: [
-      { name: "rooms", label: "Nombre de chambres", type: "text", placeholder: "Ex: 2 chambres, salon, cuisine" },
-      { name: "rent", label: "Loyer mensuel approximatif (USD)", type: "text", placeholder: "Ex: 500 USD" },
-    ],
-  },
-  {
-    title: "Message final",
-    fields: [
-      { name: "message", label: "Autres informations", type: "textarea", placeholder: "Décrivez votre logement, disponibilité, ou toute info utile..." },
-    ],
-  },
-];
-
 export default function OnboardingModal() {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(true);
-  const [mode, setMode] = useState(null); // null | 'seeker' | 'owner'
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    propertyType: "",
-    location: "",
-    rooms: "",
-    rent: "",
-    message: "",
-  });
+  const [mode, setMode] = useState(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -70,47 +32,8 @@ export default function OnboardingModal() {
   };
 
   const chooseOwner = () => {
-    setMode("owner");
-    setStep(0);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  };
-
-  const currentStepFields = steps[step].fields;
-  const currentStepValid = currentStepFields.every((f) => {
-    if (f.type === "select") return form[f.name];
-    return form[f.name].trim().length > 0;
-  });
-
-  const nextStep = () => {
-    if (step < steps.length - 1) setStep((s) => s + 1);
-  };
-
-  const prevStep = () => {
-    if (step > 0) setStep((s) => s - 1);
-  };
-
-  const submit = () => {
-    const text = [
-      "Bonjour Konnect House, je suis propriétaire et je veux devenir partenaire.",
-      "",
-      `Nom : ${form.name}`,
-      `Téléphone : ${form.phone}`,
-      `Type de logement : ${form.propertyType}`,
-      `Localisation : ${form.location}`,
-      `Chambres : ${form.rooms}`,
-      `Loyer : ${form.rent}`,
-      `Message : ${form.message}`,
-    ].join("\n");
-
-    window.open(
-      `https://wa.me/243821616193?text=${encodeURIComponent(text)}`,
-      "_blank"
-    );
-    setDone(true);
+    close();
+    navigate("/proprietaire/inscription");
   };
 
   return (
@@ -223,127 +146,6 @@ export default function OnboardingModal() {
                 </div>
               )}
 
-              {/* Étape 2+ : Formulaire propriétaire */}
-              {mode === "owner" && !done && (
-                <div className="px-7 py-8 sm:px-9 sm:py-10">
-                  {/* Header étape */}
-                  <div className="flex items-center gap-3 mb-5">
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-md"
-                      style={{
-                        background: "linear-gradient(135deg, #011A66 0%, #3478AB 100%)",
-                      }}
-                    >
-                      <FaHome size={18} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-extrabold text-[var(--kh-primary)]">
-                        Devenir partenaire
-                      </h3>
-                      <p className="text-xs text-[var(--kh-text-muted)] font-medium">
-                        Étape {step + 1} sur {steps.length}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Barre de progression */}
-                  <div className="w-full h-2 bg-[var(--kh-bg)] rounded-full mb-6 overflow-hidden">
-                    <motion.div
-                      className="h-full"
-                      style={{
-                        background: "linear-gradient(90deg, #011A66 0%, #3478AB 100%)",
-                      }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((step + 1) / steps.length) * 100}%` }}
-                      transition={{ duration: 0.3 }}
-                    />
-                  </div>
-
-                  <h4 className="text-lg font-bold text-[var(--kh-primary)] mb-4">
-                    {steps[step].title}
-                  </h4>
-
-                  <div className="space-y-4">
-                    {currentStepFields.map((field) => (
-                      <div key={field.name}>
-                        <label className="block text-sm font-semibold text-[var(--kh-primary)] mb-1.5">
-                          {field.label}
-                        </label>
-                        {field.type === "select" ? (
-                          <select
-                            name={field.name}
-                            value={form[field.name]}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40"
-                          >
-                            <option value="" disabled>
-                              Sélectionnez
-                            </option>
-                            {field.options.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                          </select>
-                        ) : field.type === "textarea" ? (
-                          <textarea
-                            name={field.name}
-                            value={form[field.name]}
-                            onChange={handleChange}
-                            rows={4}
-                            placeholder={field.placeholder}
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40 resize-none"
-                          />
-                        ) : (
-                          <input
-                            type={field.type}
-                            name={field.name}
-                            value={form[field.name]}
-                            onChange={handleChange}
-                            placeholder={field.placeholder}
-                            required
-                            className="w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40"
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Navigation */}
-                  <div className="flex items-center justify-between mt-8">
-                    <button
-                      onClick={prevStep}
-                      disabled={step === 0}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[var(--kh-text-muted)] disabled:opacity-40 hover:text-[var(--kh-primary)] hover:bg-[var(--kh-bg)] transition"
-                    >
-                      <FaArrowLeft size={12} /> Précédent
-                    </button>
-
-                    {step < steps.length - 1 ? (
-                      <button
-                        onClick={nextStep}
-                        disabled={!currentStepValid}
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white kh-gradient-btn disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md"
-                      >
-                        Suivant <FaArrowRight size={12} />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={submit}
-                        disabled={!currentStepValid}
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{
-                          background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
-                        }}
-                      >
-                        Envoyer <FaWhatsapp />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {/* Écran de succès */}
               {done && (
                 <div className="px-8 py-10 sm:px-10 sm:py-12 text-center">
@@ -390,7 +192,6 @@ export default function OnboardingModal() {
           animate={{ scale: 1 }}
           onClick={() => {
             setMode(null);
-            setStep(0);
             setDone(false);
             setIsOpen(true);
             sessionStorage.removeItem(BACKDROP_KEY);

@@ -1,45 +1,28 @@
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import ProblemSolution from "./components/ProblemSolution";
-import HowItWorks from "./components/HowItWorks";
-import ListingTypes from "./components/ListingTypes";
-import Partners from "./components/Partners";
-import Testimonials from "./components/Testimonials";
-import FinalCTA from "./components/FinalCTA";
-import Footer from "./components/Footer";
-import OnboardingModal from "./components/OnboardingModal";
+import { Navigate, Route, Routes } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import ProviderLayout from "./pages/ProviderLayout";
+import RequireProvider from "./pages/RequireProvider";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
+import NewPropertyPage from "./pages/NewPropertyPage";
 
-function App() {
+export default function App() {
   return (
-    <div className="bg-[var(--kh-bg)] text-[var(--kh-text)] overflow-x-hidden transition-colors duration-300">
-      <OnboardingModal />
-      <Navbar />
-      <main className="snap-container">
-        <section className="snap-section">
-          <Hero />
-        </section>
-        <section className="snap-section">
-          <ProblemSolution />
-        </section>
-        <section className="snap-section">
-          <HowItWorks />
-        </section>
-        <section className="snap-section">
-          <ListingTypes />
-        </section>
-        <section className="snap-section">
-          <Partners />
-        </section>
-        <section className="snap-section">
-          <Testimonials />
-        </section>
-        <section className="snap-section">
-          <FinalCTA />
-        </section>
-      </main>
-      <Footer />
-    </div>
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route element={<ProviderLayout />}>
+        <Route path="/proprietaire/connexion" element={<LoginPage />} />
+        <Route path="/proprietaire/inscription" element={<RegisterPage />} />
+        <Route element={<RequireProvider />}>
+          <Route path="/proprietaire" element={<DashboardPage />} />
+          <Route
+            path="/proprietaire/biens/nouveau"
+            element={<NewPropertyPage />}
+          />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
-
-export default App;

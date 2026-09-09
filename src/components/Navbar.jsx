@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
 import { FiMenu, FiX, FiSun, FiMoon } from "react-icons/fi";
 import useTheme from "../hooks/useTheme";
+import { useAuth } from "../lib/auth";
 import logo from "../assets/removebg.png";
 
 const navLinks = [
@@ -16,6 +18,10 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const { user } = useAuth();
+  const ownerHref = user?.role === "PROVIDER" || user?.role === "ADMIN"
+    ? "/proprietaire"
+    : "/proprietaire/connexion";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -78,6 +84,12 @@ export default function Navbar() {
             {theme === "dark" ? <FiSun /> : <FiMoon />}
           </button>
 
+          <Link
+            to={ownerHref}
+            className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)] transition-colors"
+          >
+            Espace propriétaire
+          </Link>
           <a
             href="https://wa.me/243821616193?text=Menu"
             target="_blank"
@@ -121,6 +133,15 @@ export default function Navbar() {
                 </li>
               ))}
               <li className="mt-2">
+                <Link
+                  to={ownerHref}
+                  onClick={() => setMenuOpen(false)}
+                  className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold hover:bg-[var(--kh-surface)]"
+                >
+                  Espace propriétaire
+                </Link>
+              </li>
+              <li>
                 <a
                   href="https://wa.me/243821616193?text=Menu"
                   target="_blank"

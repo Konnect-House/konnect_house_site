@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   FaWhatsapp,
   FaInstagram,
@@ -45,6 +46,12 @@ export default function Footer() {
 
           {/* Liens */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[var(--kh-text-muted)]">
+            <Link
+              to="/proprietaire/connexion"
+              className="hover:text-[var(--kh-primary)] transition"
+            >
+              Espace propriétaire
+            </Link>
             <a href="#" className="hover:text-[var(--kh-primary)] transition">
               Politique de confidentialité
             </a>
