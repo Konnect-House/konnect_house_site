@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import {
-  fileToDataUrl,
-  ID_DOCUMENT_TYPES,
-  isMediaUrl,
-} from "../lib/media";
+import { api, uploadFile } from "../lib/api";
+import { ID_DOCUMENT_TYPES, isHttpUrl } from "../lib/media";
 
 const fieldClass =
   "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
@@ -103,7 +99,7 @@ function emptyForm(user) {
 }
 
 export default function OnboardingPage() {
-  const { user, completeOnboarding } = useAuth();
+  const { user, token, completeOnboarding } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(() => emptyForm(user));
@@ -111,6 +107,7 @@ export default function OnboardingPage() {
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -153,25 +150,34 @@ export default function OnboardingPage() {
   }, []);
 
   const meta = STEPS[step];
-  const avatarOk = useMemo(() => isMediaUrl(form.avatarUrl), [form.avatarUrl]);
-  const docOk = useMemo(() => isMediaUrl(form.idDocumentUrl), [form.idDocumentUrl]);
-
-  if (user?.role === "PROVIDER" && !user.needsOnboarding) {
-    return <Navigate to="/proprietaire" replace />;
-  }
+  const avatarOk = useMemo(() => isHttpUrl(form.avatarUrl), [form.avatarUrl]);
+  const docOk = useMemo(() => isHttpUrl(form.idDocumentUrl), [form.idDocumentUrl]);
 
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
   }
 
   async function onMediaFile(field, file) {
+    if (!file || !token) return;
+    const kind = field === "avatarUrl" ? "avatar" : "id-document";
+    setUploading(field);
+    setError("");
     try {
-      const url = await fileToDataUrl(file);
-      setField(field, url);
-      setError("");
+      const res = await uploadFile("/uploads/provider", {
+        token,
+        file,
+        fields: { kind },
+      });
+      setField(field, res.url);
     } catch (err) {
       setError(err.message || "Upload impossible.");
+    } finally {
+      setUploading(null);
     }
+  }
+
+  if (user?.role === "PROVIDER" && !user.needsOnboarding) {
+    return <Navigate to="/proprietaire" replace />;
   }
 
   function toggleMethod(id) {
@@ -347,24 +353,21 @@ export default function OnboardingPage() {
                 <label className="text-sm font-semibold text-[var(--kh-primary)]">
                   Photo de profil
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] &&
-                    onMediaFile("avatarUrl", e.target.files[0])
-                  }
-                  className="block w-full text-sm"
-                />
-                <input
-                  type="url"
-                  placeholder="Ou URL https de photo"
-                  value={form.avatarUrl.startsWith("data:") ? "" : form.avatarUrl}
-                  onChange={(e) => setField("avatarUrl", e.target.value)}
-                  className={fieldClass}
-                />
+                <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)] hover:border-[var(--kh-blue-2)]">
+                  {uploading === "avatarUrl" ? "Upload…" : "Choisir une photo"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    disabled={Boolean(uploading)}
+                    onChange={(e) =>
+                      e.target.files?.[0] &&
+                      onMediaFile("avatarUrl", e.target.files[0])
+                    }
+                  />
+                </label>
                 <p className="text-xs text-[var(--kh-text-muted)]">
-                  Préremplie depuis Google si disponible.
+                  JPG/PNG/WebP · max 2,5 Mo · stocké sur le CDN Neon.
                 </p>
               </div>
             </div>
@@ -506,16 +509,20 @@ export default function OnboardingPage() {
                 </option>
               ))}
             </select>
-            <input
-              type="file"
-              accept="image/*,application/pdf"
-              onChange={(e) =>
-                e.target.files?.[0] &&
-                onMediaFile("idDocumentUrl", e.target.files[0])
-              }
-              className="block w-full text-sm"
-            />
-            {docOk && form.idDocumentUrl.startsWith("data:image/") ? (
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)] hover:border-[var(--kh-blue-2)]">
+              {uploading === "idDocumentUrl" ? "Upload…" : "Uploader la pièce d’identité"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                disabled={Boolean(uploading)}
+                onChange={(e) =>
+                  e.target.files?.[0] &&
+                  onMediaFile("idDocumentUrl", e.target.files[0])
+                }
+              />
+            </label>
+            {docOk && !form.idDocumentUrl.toLowerCase().includes(".pdf") ? (
               <img
                 src={form.idDocumentUrl}
                 alt="Aperçu pièce"
@@ -524,11 +531,11 @@ export default function OnboardingPage() {
             ) : null}
             {docOk ? (
               <p className="text-sm text-emerald-600">
-                Document prêt — l’admin pourra le consulter pour valider votre identité.
+                Document uploadé — l’admin pourra le consulter pour valider votre identité.
               </p>
             ) : (
               <p className="text-xs text-[var(--kh-text-muted)]">
-                Photo nette recto (ou PDF). Max 2,5 Mo.
+                Photo nette recto ou PDF · max 2,5 Mo · CDN Neon.
               </p>
             )}
           </>

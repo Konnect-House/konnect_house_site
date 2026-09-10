@@ -23,3 +23,25 @@ export async function api(path, { token, method = "GET", body } = {}) {
   }
   return data;
 }
+
+/** Multipart upload (do not set Content-Type — browser sets boundary). */
+export async function uploadFile(path, { token, file, fields = {} } = {}) {
+  const form = new FormData();
+  form.append("file", file);
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value != null) form.append(key, String(value));
+  });
+  const res = await fetch(apiUrl(path), {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: form,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const raw = data.message ?? data.error ?? `Erreur ${res.status}`;
+    throw new Error(Array.isArray(raw) ? raw.join(" ") : String(raw));
+  }
+  return data;
+}

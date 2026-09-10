@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { api } from "../lib/api";
+import { api, uploadFile } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import {
-  fileToDataUrl,
-  ID_DOCUMENT_TYPES,
-  isMediaUrl,
-  KYC_LABELS,
-} from "../lib/media";
+import { ID_DOCUMENT_TYPES, isHttpUrl, KYC_LABELS } from "../lib/media";
 
 const fieldClass =
   "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
@@ -59,13 +54,14 @@ function emptyForm(user) {
 }
 
 export default function ProfilePage() {
-  const { user, updateProfile } = useAuth();
+  const { user, token, updateProfile } = useAuth();
   const [form, setForm] = useState(() => emptyForm(user));
   const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(null);
 
   useEffect(() => {
     if (user) setForm(emptyForm(user));
@@ -80,8 +76,8 @@ export default function ProfilePage() {
       .catch(() => {});
   }, []);
 
-  const avatarOk = useMemo(() => isMediaUrl(form.avatarUrl), [form.avatarUrl]);
-  const docOk = useMemo(() => isMediaUrl(form.idDocumentUrl), [form.idDocumentUrl]);
+  const avatarOk = useMemo(() => isHttpUrl(form.avatarUrl), [form.avatarUrl]);
+  const docOk = useMemo(() => isHttpUrl(form.idDocumentUrl), [form.idDocumentUrl]);
 
   if (!user) return <Navigate to="/" replace />;
 
@@ -113,13 +109,23 @@ export default function ProfilePage() {
     });
   }
 
-  async function onFile(field, file) {
+  async function onUpload(field, file) {
+    if (!file || !token) return;
+    const kind = field === "avatarUrl" ? "avatar" : "id-document";
+    setUploading(field);
+    setError("");
+    setOk("");
     try {
-      const url = await fileToDataUrl(file);
-      setField(field, url);
-      setError("");
+      const res = await uploadFile("/uploads/provider", {
+        token,
+        file,
+        fields: { kind },
+      });
+      setField(field, res.url);
     } catch (err) {
       setError(err.message || "Upload impossible.");
+    } finally {
+      setUploading(null);
     }
   }
 
@@ -128,11 +134,11 @@ export default function ProfilePage() {
     setOk("");
     setError("");
     if (!avatarOk) {
-      setError("Photo de profil invalide.");
+      setError("Uploadez une photo de profil.");
       return;
     }
     if (!docOk) {
-      setError("Pièce d’identité requise (image ou PDF, max 2,5 Mo).");
+      setError("Uploadez votre pièce d’identité.");
       return;
     }
     const usesMm = form.acceptedPaymentMethods.some((m) => MM.has(m));
@@ -159,7 +165,9 @@ export default function ProfilePage() {
         bankAccount: form.bankAccount.trim() || undefined,
         acceptedPaymentMethods: form.acceptedPaymentMethods,
       });
-      setOk("Profil enregistré. Si vous avez changé la pièce d’identité, le KYC repasse en revue.");
+      setOk(
+        "Profil enregistré. Si vous avez changé la pièce d’identité, le KYC repasse en revue.",
+      );
     } catch (err) {
       setError(err.message || "Mise à jour impossible.");
     } finally {
@@ -178,8 +186,8 @@ export default function ProfilePage() {
         Mes informations
       </h1>
       <p className="mt-2 text-[var(--kh-text-muted)]">
-        Modifiez votre identité, votre adresse, vos moyens de paiement et votre
-        pièce KYC.
+        Modifiez votre identité, vos moyens de paiement et votre pièce KYC via
+        upload (CDN Neon).
       </p>
       <p className="mt-3 text-sm font-semibold text-[var(--kh-primary)]">
         Statut : {KYC_LABELS[kyc] || kyc || "—"} · compte {user.status}
@@ -193,18 +201,18 @@ export default function ProfilePage() {
             ) : null}
           </div>
           <div className="flex-1 space-y-2">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files?.[0] && onFile("avatarUrl", e.target.files[0])}
-              className="block w-full text-sm"
-            />
-            <input
-              placeholder="Ou URL de photo"
-              value={form.avatarUrl.startsWith("data:") ? "" : form.avatarUrl}
-              onChange={(e) => setField("avatarUrl", e.target.value)}
-              className={fieldClass}
-            />
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)]">
+              {uploading === "avatarUrl" ? "Upload…" : "Changer la photo"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                disabled={Boolean(uploading)}
+                onChange={(e) =>
+                  e.target.files?.[0] && onUpload("avatarUrl", e.target.files[0])
+                }
+              />
+            </label>
           </div>
         </div>
 
@@ -232,32 +240,38 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        <fieldset className="rounded-2xl border border-[var(--kh-border)] p-4">
+        <fieldset className="rounded-2xl border border-[var(--kh-border)] p-4 space-y-3">
           <legend className="px-1 text-sm font-bold text-[var(--kh-primary)]">
             Pièce d’identité (KYC)
           </legend>
           <select
             value={form.idDocumentType}
             onChange={(e) => setField("idDocumentType", e.target.value)}
-            className={`${fieldClass} mb-3`}
+            className={fieldClass}
           >
             {ID_DOCUMENT_TYPES.map((t) => (
               <option key={t.id} value={t.id}>{t.label}</option>
             ))}
           </select>
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            onChange={(e) => e.target.files?.[0] && onFile("idDocumentUrl", e.target.files[0])}
-            className="mb-2 block w-full text-sm"
-          />
-          {docOk && form.idDocumentUrl.startsWith("data:image/") ? (
-            <img src={form.idDocumentUrl} alt="Pièce" className="mb-2 max-h-40 rounded-xl border border-[var(--kh-border)]" />
+          <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)]">
+            {uploading === "idDocumentUrl" ? "Upload…" : "Uploader la pièce"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="hidden"
+              disabled={Boolean(uploading)}
+              onChange={(e) =>
+                e.target.files?.[0] && onUpload("idDocumentUrl", e.target.files[0])
+              }
+            />
+          </label>
+          {docOk && !form.idDocumentUrl.toLowerCase().includes(".pdf") ? (
+            <img src={form.idDocumentUrl} alt="Pièce" className="max-h-40 rounded-xl border border-[var(--kh-border)]" />
           ) : null}
           {docOk ? (
-            <p className="text-xs text-emerald-600">Document prêt à l’envoi.</p>
+            <p className="text-xs text-emerald-600">Document prêt.</p>
           ) : (
-            <p className="text-xs text-[var(--kh-text-muted)]">Uploadez une photo nette ou un PDF.</p>
+            <p className="text-xs text-[var(--kh-text-muted)]">Image ou PDF · max 2,5 Mo.</p>
           )}
         </fieldset>
 
@@ -275,7 +289,7 @@ export default function ProfilePage() {
         {error ? <p className="text-sm text-red-500" role="alert">{error}</p> : null}
         {ok ? <p className="text-sm text-emerald-600">{ok}</p> : null}
 
-        <button type="submit" disabled={busy} className="w-full kh-gradient-btn rounded-xl px-6 py-3 font-bold text-white disabled:opacity-60">
+        <button type="submit" disabled={busy || Boolean(uploading)} className="w-full kh-gradient-btn rounded-xl px-6 py-3 font-bold text-white disabled:opacity-60">
           {busy ? "Enregistrement…" : "Enregistrer le profil"}
         </button>
       </form>
