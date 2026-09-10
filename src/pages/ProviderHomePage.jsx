@@ -86,8 +86,7 @@ export default function ProviderHomePage() {
             Vue d’ensemble
           </h1>
           <p className="mt-1 text-[var(--kh-text-muted)]">
-            Réservations, paiements et performance de vos maisons — comme un
-            tableau de bord hôte Airbnb.
+            Réservations, paiements et performance de vos maisons.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
