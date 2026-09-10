@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../lib/auth";
 import { api, uploadFile } from "../lib/api";
 import { ID_DOCUMENT_TYPES, isHttpUrl } from "../lib/media";
+import logo from "../assets/removebg.png";
 
 const fieldClass =
-  "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
+  "w-full px-3.5 py-2.5 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40 text-sm";
 
 const METHODS = [
   { id: "MPESA", label: "M-Pesa" },
@@ -21,52 +23,61 @@ const FALLBACK_CATEGORIES = [
   {
     id: "MAISON_DE_PASSAGE",
     label: "Maison de passage",
-    desc: "Logement meublé à la nuitée",
+    desc: "Nuitée meublée",
   },
-  {
-    id: "GUEST_HOUSE",
-    label: "Guest house",
-    desc: "Maison d’hôtes / chambres",
-  },
-  {
-    id: "APPARTEMENT",
-    label: "Appartement",
-    desc: "Studio ou appartement entier",
-  },
-  { id: "HOTEL", label: "Hôtel", desc: "Établissement hôtelier" },
-  {
-    id: "SALON_PRIVE",
-    label: "Salon privé",
-    desc: "Espace événementiel / salon",
-  },
+  { id: "GUEST_HOUSE", label: "Guest house", desc: "Chambres d’hôtes" },
+  { id: "APPARTEMENT", label: "Appartement", desc: "Studio / entier" },
+  { id: "HOTEL", label: "Hôtel", desc: "Établissement" },
+  { id: "SALON_PRIVE", label: "Salon privé", desc: "Événementiel" },
 ];
 
 const STEPS = [
   {
     id: "about",
     title: "Parlez-nous de vous",
-    subtitle:
-      "Comme chez Airbnb ou les grands portails immobiliers : une identité claire rassure les voyageurs et accélère la validation.",
+    subtitle: "Identité et adresse — pour rassurer voyageurs et validation admin.",
   },
   {
     id: "portfolio",
     title: "Votre portefeuille",
-    subtitle:
-      "Indiquez combien de biens vous gérez et de quels types. Vous pourrez les publier ensuite, un par un.",
+    subtitle: "Combien de biens, et de quels types ?",
   },
   {
     id: "kyc",
-    title: "Vérification d’identité (KYC)",
-    subtitle:
-      "Uploadez une pièce d’identité officielle. Un administrateur Konnect House la vérifiera avant d’activer votre compte (CDC §4.4.2).",
+    title: "Vérification d’identité",
+    subtitle: "Pièce officielle pour le KYC Konnect House.",
   },
   {
     id: "payouts",
     title: "Contact & reversements",
-    subtitle:
-      "WhatsApp pour les réservations, et les moyens de paiement pour vos revenus.",
+    subtitle: "WhatsApp et moyens de paiement.",
   },
 ];
+
+function CheckMark({ on }) {
+  return (
+    <span
+      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition ${
+        on
+          ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)] text-white"
+          : "border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
+      }`}
+      aria-hidden
+    >
+      {on ? (
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M2.5 6.2 4.8 8.5 9.5 3.5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : null}
+    </span>
+  );
+}
 
 function toDateInput(value) {
   if (!value) return "";
@@ -142,11 +153,16 @@ export default function OnboardingPage() {
     api("/catalog")
       .then((data) => {
         if (data.communes?.length) setCommunes(data.communes);
-        if (data.propertyCategories?.length) {
-          setCategories(data.propertyCategories);
-        }
+        if (data.propertyCategories?.length) setCategories(data.propertyCategories);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
   const meta = STEPS[step];
@@ -176,17 +192,15 @@ export default function OnboardingPage() {
     }
   }
 
-  if (user?.role === "PROVIDER" && !user.needsOnboarding) {
-    return <Navigate to="/proprietaire" replace />;
-  }
-
   function toggleMethod(id) {
     setForm((f) => {
       const has = f.acceptedPaymentMethods.includes(id);
-      const next = has
-        ? f.acceptedPaymentMethods.filter((m) => m !== id)
-        : [...f.acceptedPaymentMethods, id];
-      return { ...f, acceptedPaymentMethods: next };
+      return {
+        ...f,
+        acceptedPaymentMethods: has
+          ? f.acceptedPaymentMethods.filter((m) => m !== id)
+          : [...f.acceptedPaymentMethods, id],
+      };
     });
   }
 
@@ -207,9 +221,7 @@ export default function OnboardingPage() {
       if (!form.fullName.trim() || form.fullName.trim().length < 2) {
         return "Indiquez votre nom complet.";
       }
-      if (!avatarOk) {
-        return "Ajoutez une photo de profil (fichier ou URL https).";
-      }
+      if (!avatarOk) return "Uploadez une photo de profil.";
       if (!form.dateOfBirth) return "Indiquez votre date de naissance.";
       const birth = new Date(form.dateOfBirth);
       const age =
@@ -221,7 +233,7 @@ export default function OnboardingPage() {
         return "Indiquez votre profession.";
       }
       if (!form.homeAddress.trim() || form.homeAddress.trim().length < 5) {
-        return "Indiquez où vous habitez (adresse).";
+        return "Indiquez où vous habitez.";
       }
       if (!form.homeCommune.trim()) return "Choisissez votre commune.";
       return "";
@@ -229,29 +241,27 @@ export default function OnboardingPage() {
     if (index === 1) {
       const count = Number(form.propertyCount);
       if (!Number.isInteger(count) || count < 1) {
-        return "Indiquez combien de biens vous avez (au moins 1).";
+        return "Indiquez au moins 1 bien.";
       }
       if (form.propertyTypes.length < 1) {
-        return "Sélectionnez au moins un type de bien.";
+        return "Cochez au moins un type de bien.";
       }
       return "";
     }
     if (index === 2) {
       if (!form.idDocumentType) return "Choisissez le type de pièce.";
-      if (!docOk) {
-        return "Uploadez votre pièce d’identité (image ou PDF, max 2,5 Mo).";
-      }
+      if (!docOk) return "Uploadez votre pièce d’identité.";
       return "";
     }
     if (form.phone.trim().length < 9) {
       return "Indiquez un numéro WhatsApp valide.";
     }
     if (form.acceptedPaymentMethods.length < 1) {
-      return "Choisissez au moins un moyen de paiement.";
+      return "Cochez au moins un moyen de paiement.";
     }
     const usesMm = form.acceptedPaymentMethods.some((m) => MM.has(m));
     if (usesMm && !form.mobileMoneyNumber.trim()) {
-      return "Indiquez le numéro Mobile Money pour les reversements.";
+      return "Indiquez le numéro Mobile Money.";
     }
     return "";
   }
@@ -306,326 +316,358 @@ export default function OnboardingPage() {
     }
   }
 
+  if (user?.role === "PROVIDER" && !user.needsOnboarding) {
+    return <Navigate to="/proprietaire" replace />;
+  }
+
   return (
-    <main className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <div className="flex gap-2 mb-8" aria-hidden>
-        {STEPS.map((s, i) => (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6"
+      style={{
+        background:
+          "radial-gradient(1200px 600px at 10% -10%, rgba(102,202,228,0.28), transparent 55%), radial-gradient(900px 500px at 100% 0%, rgba(52,120,171,0.35), transparent 50%), #0A0E1A",
+      }}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="relative flex w-full max-w-[560px] max-h-[min(92dvh,900px)] flex-col overflow-hidden rounded-[1.5rem] sm:rounded-[1.75rem] border border-white/10 bg-[var(--kh-bg-soft)] shadow-2xl"
+        >
           <div
-            key={s.id}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              i <= step
-                ? "bg-[var(--kh-blue-2)]"
-                : "bg-[var(--kh-border)]"
-            }`}
+            className="h-1.5 w-full shrink-0"
+            style={{
+              background:
+                "linear-gradient(90deg, #011A66 0%, #3478AB 50%, #66CAE4 100%)",
+            }}
           />
-        ))}
-      </div>
 
-      <p className="text-sm font-bold uppercase tracking-wider text-[var(--kh-blue-2)]">
-        Étape {step + 1} sur {STEPS.length}
-      </p>
-      <h1 className="mt-2 text-3xl font-extrabold text-[var(--kh-primary)]">
-        {meta.title}
-      </h1>
-      <p className="mt-2 text-[var(--kh-text-muted)]">{meta.subtitle}</p>
-
-      <form
-        onSubmit={step === 3 ? onSubmit : (e) => e.preventDefault()}
-        className="mt-8 space-y-5"
-      >
-        {step === 0 ? (
-          <>
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
-              <div className="shrink-0">
-                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[var(--kh-border)] bg-[var(--kh-bg)] flex items-center justify-center text-sm text-[var(--kh-text-muted)]">
-                  {avatarOk ? (
-                    <img
-                      src={form.avatarUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    "Photo"
-                  )}
-                </div>
-              </div>
-              <div className="flex-1 w-full space-y-2">
-                <label className="text-sm font-semibold text-[var(--kh-primary)]">
-                  Photo de profil
-                </label>
-                <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)] hover:border-[var(--kh-blue-2)]">
-                  {uploading === "avatarUrl" ? "Upload…" : "Choisir une photo"}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    disabled={Boolean(uploading)}
-                    onChange={(e) =>
-                      e.target.files?.[0] &&
-                      onMediaFile("avatarUrl", e.target.files[0])
-                    }
-                  />
-                </label>
-                <p className="text-xs text-[var(--kh-text-muted)]">
-                  JPG/PNG/WebP · max 2,5 Mo · stocké sur le CDN Neon.
+          <div className="flex items-center justify-between gap-3 border-b border-[var(--kh-border)] px-5 py-3 sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <img src={logo} alt="" className="h-8 w-auto shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--kh-blue-2)]">
+                  Onboarding partenaire
+                </p>
+                <p className="truncate text-xs text-[var(--kh-text-muted)]">
+                  Étape {step + 1} / {STEPS.length}
                 </p>
               </div>
             </div>
-
-            <input
-              required
-              minLength={2}
-              placeholder="Nom complet"
-              value={form.fullName}
-              onChange={(e) => setField("fullName", e.target.value)}
-              className={fieldClass}
-            />
-            <div>
-              <label className="block text-sm font-semibold text-[var(--kh-primary)] mb-2">
-                Date de naissance
-              </label>
-              <input
-                required
-                type="date"
-                max={new Date(
-                  new Date().setFullYear(new Date().getFullYear() - 18),
-                )
-                  .toISOString()
-                  .slice(0, 10)}
-                value={form.dateOfBirth}
-                onChange={(e) => setField("dateOfBirth", e.target.value)}
-                className={fieldClass}
-              />
-            </div>
-            <input
-              required
-              minLength={2}
-              placeholder="Profession (ex. agent immobilier, entrepreneur…)"
-              value={form.profession}
-              onChange={(e) => setField("profession", e.target.value)}
-              className={fieldClass}
-            />
-            <input
-              required
-              minLength={5}
-              placeholder="Adresse où vous habitez"
-              value={form.homeAddress}
-              onChange={(e) => setField("homeAddress", e.target.value)}
-              className={fieldClass}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-semibold text-[var(--kh-primary)] mb-2">
-                  Commune
-                </label>
-                <select
-                  value={form.homeCommune}
-                  onChange={(e) => setField("homeCommune", e.target.value)}
-                  className={fieldClass}
-                >
-                  {communes.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-[var(--kh-primary)] mb-2">
-                  Ville
-                </label>
-                <input
-                  value={form.homeCity}
-                  onChange={(e) => setField("homeCity", e.target.value)}
-                  className={fieldClass}
-                  placeholder="Kinshasa"
+            <div className="flex gap-1" aria-hidden>
+              {STEPS.map((s, i) => (
+                <div
+                  key={s.id}
+                  className={`h-1.5 w-6 rounded-full sm:w-8 ${
+                    i <= step ? "bg-[var(--kh-blue-2)]" : "bg-[var(--kh-border)]"
+                  }`}
                 />
-              </div>
-            </div>
-          </>
-        ) : null}
-
-        {step === 1 ? (
-          <>
-            <div>
-              <label className="block text-sm font-semibold text-[var(--kh-primary)] mb-2">
-                Combien de biens gérez-vous ?
-              </label>
-              <input
-                required
-                type="number"
-                min={1}
-                max={500}
-                value={form.propertyCount}
-                onChange={(e) => setField("propertyCount", e.target.value)}
-                className={fieldClass}
-              />
-              <p className="mt-1 text-xs text-[var(--kh-text-muted)]">
-                Estimation actuelle — vous pourrez en ajouter plus tard.
-              </p>
-            </div>
-            <fieldset>
-              <legend className="text-sm font-semibold text-[var(--kh-primary)] mb-3">
-                Types de biens (plusieurs possibles)
-              </legend>
-              <div className="grid gap-2">
-                {categories.map((c) => {
-                  const on = form.propertyTypes.includes(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => toggleType(c.id)}
-                      className={`text-left px-4 py-3 rounded-xl border transition-colors ${
-                        on
-                          ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10"
-                          : "border-[var(--kh-border)] bg-[var(--kh-bg)] hover:border-[var(--kh-blue-2)]/50"
-                      }`}
-                    >
-                      <span className="font-semibold text-[var(--kh-primary)]">
-                        {c.label}
-                      </span>
-                      <span className="block text-xs text-[var(--kh-text-muted)] mt-0.5">
-                        {c.desc}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
-          </>
-        ) : null}
-
-        {step === 2 ? (
-          <>
-            <select
-              value={form.idDocumentType}
-              onChange={(e) => setField("idDocumentType", e.target.value)}
-              className={fieldClass}
-            >
-              {ID_DOCUMENT_TYPES.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
-                </option>
               ))}
-            </select>
-            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)] hover:border-[var(--kh-blue-2)]">
-              {uploading === "idDocumentUrl" ? "Upload…" : "Uploader la pièce d’identité"}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="hidden"
-                disabled={Boolean(uploading)}
-                onChange={(e) =>
-                  e.target.files?.[0] &&
-                  onMediaFile("idDocumentUrl", e.target.files[0])
-                }
-              />
-            </label>
-            {docOk && !form.idDocumentUrl.toLowerCase().includes(".pdf") ? (
-              <img
-                src={form.idDocumentUrl}
-                alt="Aperçu pièce"
-                className="max-h-48 rounded-xl border border-[var(--kh-border)]"
-              />
-            ) : null}
-            {docOk ? (
-              <p className="text-sm text-emerald-600">
-                Document uploadé — l’admin pourra le consulter pour valider votre identité.
-              </p>
-            ) : (
-              <p className="text-xs text-[var(--kh-text-muted)]">
-                Photo nette recto ou PDF · max 2,5 Mo · CDN Neon.
-              </p>
-            )}
-          </>
-        ) : null}
+            </div>
+          </div>
 
-        {step === 3 ? (
-          <>
-            <input
-              type="tel"
-              required
-              minLength={9}
-              placeholder="Téléphone WhatsApp"
-              value={form.phone}
-              onChange={(e) => setField("phone", e.target.value)}
-              className={fieldClass}
-            />
-            <fieldset>
-              <legend className="text-sm font-semibold text-[var(--kh-primary)] mb-2">
-                Moyens de paiement acceptés
-              </legend>
-              <div className="grid grid-cols-2 gap-2">
-                {METHODS.map((m) => (
-                  <label
-                    key={m.id}
-                    className="flex items-center gap-2 text-sm text-[var(--kh-text)]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={form.acceptedPaymentMethods.includes(m.id)}
-                      onChange={() => toggleMethod(m.id)}
-                    />
-                    {m.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <input
-              placeholder="Numéro Mobile Money"
-              value={form.mobileMoneyNumber}
-              onChange={(e) => setField("mobileMoneyNumber", e.target.value)}
-              className={fieldClass}
-            />
-            <input
-              placeholder="Compte bancaire (optionnel, reversements)"
-              value={form.bankAccount}
-              onChange={(e) => setField("bankAccount", e.target.value)}
-              className={fieldClass}
-            />
-            <p className="text-xs text-[var(--kh-text-muted)]">
-              Un administrateur validera votre compte avant publication des
-              logements.
+          <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+            <h1 className="text-xl font-extrabold text-[var(--kh-primary)] sm:text-2xl">
+              {meta.title}
+            </h1>
+            <p className="mt-1 text-sm text-[var(--kh-text-muted)]">
+              {meta.subtitle}
             </p>
-          </>
-        ) : null}
 
-        {error ? (
-          <p className="text-sm text-red-500" role="alert">
-            {error}
-          </p>
-        ) : null}
+            <form
+              id="kh-onboarding-form"
+              onSubmit={step === 3 ? onSubmit : (e) => e.preventDefault()}
+              className="mt-5 space-y-3.5"
+            >
+              {step === 0 ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--kh-border)] bg-[var(--kh-bg)] text-xs text-[var(--kh-text-muted)]">
+                      {avatarOk ? (
+                        <img
+                          src={form.avatarUrl}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        "Photo"
+                      )}
+                    </div>
+                    <label className="inline-flex cursor-pointer items-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3.5 py-2.5 text-sm font-bold text-[var(--kh-primary)]">
+                      {uploading === "avatarUrl" ? "Upload…" : "Choisir une photo"}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        disabled={Boolean(uploading)}
+                        onChange={(e) =>
+                          e.target.files?.[0] &&
+                          onMediaFile("avatarUrl", e.target.files[0])
+                        }
+                      />
+                    </label>
+                  </div>
+                  <input
+                    required
+                    minLength={2}
+                    placeholder="Nom complet"
+                    value={form.fullName}
+                    onChange={(e) => setField("fullName", e.target.value)}
+                    className={fieldClass}
+                  />
+                  <input
+                    required
+                    type="date"
+                    max={new Date(
+                      new Date().setFullYear(new Date().getFullYear() - 18),
+                    )
+                      .toISOString()
+                      .slice(0, 10)}
+                    value={form.dateOfBirth}
+                    onChange={(e) => setField("dateOfBirth", e.target.value)}
+                    className={fieldClass}
+                  />
+                  <input
+                    required
+                    minLength={2}
+                    placeholder="Profession"
+                    value={form.profession}
+                    onChange={(e) => setField("profession", e.target.value)}
+                    className={fieldClass}
+                  />
+                  <input
+                    required
+                    minLength={5}
+                    placeholder="Adresse où vous habitez"
+                    value={form.homeAddress}
+                    onChange={(e) => setField("homeAddress", e.target.value)}
+                    className={fieldClass}
+                  />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <select
+                      value={form.homeCommune}
+                      onChange={(e) => setField("homeCommune", e.target.value)}
+                      className={fieldClass}
+                    >
+                      {communes.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={form.homeCity}
+                      onChange={(e) => setField("homeCity", e.target.value)}
+                      className={fieldClass}
+                      placeholder="Ville"
+                    />
+                  </div>
+                </>
+              ) : null}
 
-        <div className="flex gap-3 pt-2">
-          {step > 0 ? (
-            <button
-              type="button"
-              onClick={goBack}
-              className="px-5 py-3 rounded-xl font-semibold border border-[var(--kh-border)] text-[var(--kh-primary)]"
-            >
-              Retour
-            </button>
-          ) : null}
-          {step < STEPS.length - 1 ? (
-            <button
-              type="button"
-              onClick={goNext}
-              className="flex-1 kh-gradient-btn kh-glow px-6 py-3 rounded-xl font-bold text-white"
-            >
-              Continuer
-            </button>
-          ) : (
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex-1 kh-gradient-btn kh-glow px-6 py-3 rounded-xl font-bold text-white disabled:opacity-60"
-            >
-              {busy ? "Enregistrement…" : "Valider mon profil"}
-            </button>
-          )}
-        </div>
-      </form>
-    </main>
+              {step === 1 ? (
+                <>
+                  <div>
+                    <label className="mb-1.5 block text-sm font-semibold text-[var(--kh-primary)]">
+                      Combien de biens gérez-vous ?
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={form.propertyCount}
+                      onChange={(e) => setField("propertyCount", e.target.value)}
+                      className={fieldClass}
+                    />
+                  </div>
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-semibold text-[var(--kh-primary)]">
+                      Types de biens
+                      <span className="ml-1 font-normal text-[var(--kh-text-muted)]">
+                        (plusieurs possibles)
+                      </span>
+                    </legend>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {categories.map((c) => {
+                        const on = form.propertyTypes.includes(c.id);
+                        return (
+                          <label
+                            key={c.id}
+                            className={`flex cursor-pointer items-start gap-2 rounded-xl border px-2.5 py-2.5 transition ${
+                              on
+                                ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10"
+                                : "border-[var(--kh-border)] bg-[var(--kh-bg)] hover:border-[var(--kh-blue-2)]/40"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={on}
+                              onChange={() => toggleType(c.id)}
+                            />
+                            <CheckMark on={on} />
+                            <span className="min-w-0">
+                              <span className="block text-sm font-bold leading-tight text-[var(--kh-primary)]">
+                                {c.label}
+                              </span>
+                              <span className="mt-0.5 block text-[11px] leading-snug text-[var(--kh-text-muted)]">
+                                {c.desc}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                </>
+              ) : null}
+
+              {step === 2 ? (
+                <>
+                  <select
+                    value={form.idDocumentType}
+                    onChange={(e) => setField("idDocumentType", e.target.value)}
+                    className={fieldClass}
+                  >
+                    {ID_DOCUMENT_TYPES.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="inline-flex w-full cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)]">
+                    {uploading === "idDocumentUrl"
+                      ? "Upload…"
+                      : "Uploader la pièce d’identité"}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      className="hidden"
+                      disabled={Boolean(uploading)}
+                      onChange={(e) =>
+                        e.target.files?.[0] &&
+                        onMediaFile("idDocumentUrl", e.target.files[0])
+                      }
+                    />
+                  </label>
+                  {docOk && !form.idDocumentUrl.toLowerCase().includes(".pdf") ? (
+                    <img
+                      src={form.idDocumentUrl}
+                      alt="Aperçu"
+                      className="max-h-36 rounded-xl border border-[var(--kh-border)]"
+                    />
+                  ) : null}
+                  <p className="text-xs text-[var(--kh-text-muted)]">
+                    {docOk
+                      ? "Document prêt pour validation admin."
+                      : "Image ou PDF · max 2,5 Mo."}
+                  </p>
+                </>
+              ) : null}
+
+              {step === 3 ? (
+                <>
+                  <input
+                    type="tel"
+                    required
+                    minLength={9}
+                    placeholder="Téléphone WhatsApp"
+                    value={form.phone}
+                    onChange={(e) => setField("phone", e.target.value)}
+                    className={fieldClass}
+                  />
+                  <fieldset>
+                    <legend className="mb-2 text-sm font-semibold text-[var(--kh-primary)]">
+                      Moyens de paiement
+                    </legend>
+                    <div className="grid grid-cols-2 gap-2">
+                      {METHODS.map((m) => {
+                        const on = form.acceptedPaymentMethods.includes(m.id);
+                        return (
+                          <label
+                            key={m.id}
+                            className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
+                              on
+                                ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10"
+                                : "border-[var(--kh-border)] bg-[var(--kh-bg)]"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={on}
+                              onChange={() => toggleMethod(m.id)}
+                            />
+                            <CheckMark on={on} />
+                            <span className="font-semibold text-[var(--kh-primary)]">
+                              {m.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                  <input
+                    placeholder="Numéro Mobile Money"
+                    value={form.mobileMoneyNumber}
+                    onChange={(e) =>
+                      setField("mobileMoneyNumber", e.target.value)
+                    }
+                    className={fieldClass}
+                  />
+                  <input
+                    placeholder="Compte bancaire (optionnel)"
+                    value={form.bankAccount}
+                    onChange={(e) => setField("bankAccount", e.target.value)}
+                    className={fieldClass}
+                  />
+                </>
+              ) : null}
+
+              {error ? (
+                <p className="text-sm text-red-500" role="alert">
+                  {error}
+                </p>
+              ) : null}
+            </form>
+          </div>
+
+          <div className="flex shrink-0 gap-2 border-t border-[var(--kh-border)] bg-[var(--kh-bg-soft)] px-5 py-3.5 sm:px-7">
+            {step > 0 ? (
+              <button
+                type="button"
+                onClick={goBack}
+                className="rounded-xl border border-[var(--kh-border)] px-4 py-2.5 text-sm font-semibold text-[var(--kh-primary)]"
+              >
+                Retour
+              </button>
+            ) : null}
+            {step < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={Boolean(uploading)}
+                className="kh-gradient-btn flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              >
+                Continuer
+              </button>
+            ) : (
+              <button
+                type="submit"
+                form="kh-onboarding-form"
+                disabled={busy || Boolean(uploading)}
+                className="kh-gradient-btn flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {busy ? "Enregistrement…" : "Valider mon profil"}
+              </button>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

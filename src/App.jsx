@@ -23,9 +23,12 @@ export default function App() {
         path="/proprietaire/inscription"
         element={<Navigate to="/?auth=inscription" replace />}
       />
+      {/* Onboarding en modal plein écran — hors sidebar fournisseur */}
+      <Route element={<RequireProvider />}>
+        <Route path="/proprietaire/onboarding" element={<OnboardingPage />} />
+      </Route>
       <Route element={<ProviderLayout />}>
         <Route element={<RequireProvider />}>
-          <Route path="/proprietaire/onboarding" element={<OnboardingPage />} />
           <Route element={<RequireOnboarded />}>
             <Route path="/proprietaire" element={<ProviderHomePage />} />
             <Route path="/proprietaire/gestion" element={<DashboardPage />} />
