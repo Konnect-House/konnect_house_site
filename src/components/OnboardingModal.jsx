@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaWhatsapp, FaHome, FaArrowRight } from "react-icons/fa";
 import { FiCheck, FiX } from "react-icons/fi";
-import logo from "../assets/removebg.png";
+import BrandLogo from "./BrandLogo";
 import { useAuthModal } from "../lib/authModal";
 
 const SEEKER_LINK = "https://wa.me/243821616193?text=Menu";
@@ -83,9 +83,7 @@ export default function OnboardingModal() {
                     transition={{ delay: 0.1, duration: 0.4 }}
                     className="mb-6"
                   >
-                    <img
-                      src={logo}
-                      alt="Konnect House"
+                    <BrandLogo
                       className="h-16 sm:h-20 w-auto mx-auto drop-shadow-lg"
                     />
                   </motion.div>

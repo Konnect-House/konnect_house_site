@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "../lib/auth";
 import { api, uploadFile } from "../lib/api";
 import { ID_DOCUMENT_TYPES, isHttpUrl } from "../lib/media";
-import logo from "../assets/removebg.png";
+import BrandLogo from "../components/BrandLogo";
 
 const fieldClass =
   "w-full px-3.5 py-2.5 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40 text-sm";
@@ -347,7 +347,7 @@ export default function OnboardingPage() {
 
           <div className="flex items-center justify-between gap-3 border-b border-[var(--kh-border)] px-5 py-3 sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
-              <img src={logo} alt="" className="h-8 w-auto shrink-0" />
+              <BrandLogo className="h-8 w-auto shrink-0" />
               <div className="min-w-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--kh-blue-2)]">
                   Onboarding partenaire

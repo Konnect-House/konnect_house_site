@@ -5,7 +5,7 @@ import { FiX } from "react-icons/fi";
 import GoogleButton from "./GoogleButton";
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
-import logo from "../assets/removebg.png";
+import BrandLogo from "./BrandLogo";
 
 export default function OwnerAuthModal() {
   const { mode, close, openLogin, openRegister } = useAuthModal();
@@ -103,11 +103,7 @@ export default function OwnerAuthModal() {
               <FiX size={18} />
             </button>
             <div className="px-5 py-8 sm:px-10 sm:py-10">
-              <img
-                src={logo}
-                alt="Konnect House"
-                className="h-12 w-auto mx-auto mb-5"
-              />
+              <BrandLogo className="h-12 w-auto mx-auto mb-5" />
               <h2 className="text-2xl font-extrabold text-center text-[var(--kh-primary)]">
                 {isRegister ? "Devenir partenaire" : "Espace propriétaire"}
               </h2>
