@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
-import logo from "../assets/removebg.png";
+import BrandLogo from "./BrandLogo";
 
 const socials = [
   {
@@ -42,7 +42,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           {/* Logo + tagline */}
           <div className="flex flex-col items-center md:items-start gap-3">
-            <img src={logo} alt="Konnect House" className="h-10 w-auto" />
+            <BrandLogo className="h-10 w-auto" />
             <p className="text-sm text-[var(--kh-text-muted)] max-w-xs text-center md:text-left">
               Votre immo idéal, simplifié. Un bot WhatsApp pour trouver ou louer
               un logement à Kinshasa.

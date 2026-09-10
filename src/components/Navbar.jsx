@@ -6,7 +6,7 @@ import { FiMenu, FiX, FiSun, FiMoon } from "react-icons/fi";
 import useTheme from "../hooks/useTheme";
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
-import logo from "../assets/removebg.png";
+import BrandLogo from "./BrandLogo";
 
 const navLinks = [
   { label: "Comment ça marche", href: "#how" },
@@ -66,7 +66,7 @@ export default function Navbar() {
           }}
           className="flex items-center gap-2 shrink-0 relative z-[70]"
         >
-          <img src={logo} alt="Konnect House" className="h-8 sm:h-10 w-auto" />
+          <BrandLogo className="h-8 sm:h-10 w-auto" />
         </a>
 
         <ul className="hidden lg:flex items-center gap-8">
