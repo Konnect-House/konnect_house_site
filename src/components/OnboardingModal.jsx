@@ -48,11 +48,9 @@ export default function OnboardingModal() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4"
             style={{
-              background: "rgba(10, 14, 26, 0.72)",
-              backdropFilter: "blur(10px)",
-              WebkitBackdropFilter: "blur(10px)",
+              background: "rgba(10, 14, 26, 0.82)",
             }}
           >
             <motion.div
@@ -60,7 +58,7 @@ export default function OnboardingModal() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.96, opacity: 0, y: 16 }}
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-              className="relative w-full max-w-[440px] max-h-[90vh] overflow-y-auto rounded-[2rem] shadow-2xl"
+              className="relative w-full max-w-[440px] max-h-[min(92dvh,100%)] overflow-y-auto rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl"
               style={{
                 background: "var(--kh-bg-soft)",
                 border: "1px solid var(--kh-border)",
@@ -77,7 +75,7 @@ export default function OnboardingModal() {
 
               {/* Étape 1 : Welcome */}
               {!mode && !done && (
-                <div className="px-8 py-10 sm:px-10 sm:py-12 text-center">
+                <div className="px-5 py-8 sm:px-10 sm:py-12 text-center">
                   {/* Logo navbar complet */}
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -152,7 +150,7 @@ export default function OnboardingModal() {
 
               {/* Écran de succès */}
               {done && (
-                <div className="px-8 py-10 sm:px-10 sm:py-12 text-center">
+                <div className="px-5 py-8 sm:px-10 sm:py-12 text-center">
                   <div className="w-20 h-20 mx-auto rounded-full bg-[#25D366]/15 text-[#25D366] flex items-center justify-center mb-6">
                     <FiCheck size={40} />
                   </div>
@@ -200,7 +198,7 @@ export default function OnboardingModal() {
             setIsOpen(true);
             sessionStorage.removeItem(BACKDROP_KEY);
           }}
-          className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg hover:scale-110 transition"
+          className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-4 sm:right-6 z-40 w-14 h-14 rounded-full flex items-center justify-center text-white text-2xl shadow-lg"
           style={{
             background: "linear-gradient(135deg, #25D366 0%, #128C7E 100%)",
           }}

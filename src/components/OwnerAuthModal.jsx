@@ -7,26 +7,17 @@ import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
 import logo from "../assets/removebg.png";
 
-const fieldClass =
-  "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
-
 export default function OwnerAuthModal() {
   const { mode, close, openLogin, openRegister } = useAuthModal();
-  const { googleProvider, login, logout } = useAuth();
+  const { googleProvider, logout } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const isRegister = mode === "register";
   const open = Boolean(mode);
 
   useEffect(() => {
     setError("");
-    setShowPassword(false);
-    setEmail("");
-    setPassword("");
   }, [mode]);
 
   useEffect(() => {
@@ -44,9 +35,13 @@ export default function OwnerAuthModal() {
 
   const goAfterAuth = useCallback(
     (res) => {
-      if (res.data?.role !== "PROVIDER" && res.data?.role !== "ADMIN") {
+      if (res.data?.role !== "PROVIDER") {
         logout();
-        setError("Cet espace est réservé aux propriétaires.");
+        setError(
+          res.data?.role === "ADMIN"
+            ? "Les administrateurs se connectent via le Dashboard."
+            : "Cet espace est réservé aux propriétaires.",
+        );
         return;
       }
       close();
@@ -73,19 +68,6 @@ export default function OwnerAuthModal() {
     [goAfterAuth, googleProvider],
   );
 
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError("");
-    setBusy(true);
-    try {
-      goAfterAuth(await login(email, password));
-    } catch (err) {
-      setError(err.message || "Connexion impossible.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <AnimatePresence>
       {open ? (
@@ -93,7 +75,7 @@ export default function OwnerAuthModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[110] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4"
           style={{ background: "rgba(10, 14, 26, 0.82)" }}
           onClick={close}
         >
@@ -103,7 +85,7 @@ export default function OwnerAuthModal() {
             exit={{ scale: 0.96, opacity: 0, y: 16 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[440px] max-h-[90vh] overflow-y-auto rounded-[2rem] bg-[var(--kh-bg-soft)] border border-[var(--kh-border)] shadow-2xl"
+            className="relative w-full max-w-[440px] max-h-[min(92dvh,100%)] overflow-y-auto rounded-[1.5rem] sm:rounded-[2rem] bg-[var(--kh-bg-soft)] border border-[var(--kh-border)] shadow-2xl"
           >
             <div
               className="absolute top-0 left-0 right-0 h-1.5 rounded-t-[2rem]"
@@ -120,7 +102,7 @@ export default function OwnerAuthModal() {
             >
               <FiX size={18} />
             </button>
-            <div className="px-8 py-10 sm:px-10">
+            <div className="px-5 py-8 sm:px-10 sm:py-10">
               <img
                 src={logo}
                 alt="Konnect House"
@@ -131,12 +113,17 @@ export default function OwnerAuthModal() {
               </h2>
               <p className="mt-2 text-center text-sm text-[var(--kh-text-muted)]">
                 {isRegister
-                  ? "Inscrivez-vous avec Gmail, puis complétez votre profil (WhatsApp, paiements)."
-                  : "Connectez-vous avec Gmail pour gérer vos maisons de passage."}
+                  ? "S’inscrire avec Gmail. Si le compte existe déjà, vous serez connecté."
+                  : "Se connecter avec Gmail. Pas encore de compte ? Il sera créé automatiquement."}
               </p>
               <div className="mt-7 space-y-4">
                 <GoogleButton
                   key={mode}
+                  label={
+                    isRegister
+                      ? "S'inscrire avec Google"
+                      : "Se connecter avec Google"
+                  }
                   onCredential={onCredential}
                   disabled={busy}
                 />
@@ -144,49 +131,6 @@ export default function OwnerAuthModal() {
                   <p className="text-sm text-red-500 text-center" role="alert">
                     {error}
                   </p>
-                ) : null}
-                {!isRegister ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="w-full text-sm font-semibold text-[var(--kh-text-muted)]"
-                    >
-                      {showPassword
-                        ? "Masquer la connexion email"
-                        : "Connexion email (admin)"}
-                    </button>
-                    {showPassword ? (
-                      <form onSubmit={onSubmit} className="space-y-3">
-                        <input
-                          type="email"
-                          required
-                          autoComplete="email"
-                          placeholder="Email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className={fieldClass}
-                        />
-                        <input
-                          type="password"
-                          required
-                          minLength={6}
-                          autoComplete="current-password"
-                          placeholder="Mot de passe"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className={fieldClass}
-                        />
-                        <button
-                          type="submit"
-                          disabled={busy}
-                          className="w-full kh-gradient-btn kh-glow px-6 py-3 rounded-xl font-bold text-white disabled:opacity-60"
-                        >
-                          {busy ? "Connexion…" : "Se connecter"}
-                        </button>
-                      </form>
-                    ) : null}
-                  </>
                 ) : null}
               </div>
               <p className="mt-6 text-sm text-center text-[var(--kh-text-muted)]">

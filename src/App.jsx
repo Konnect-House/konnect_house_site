@@ -6,6 +6,8 @@ import RequireOnboarded from "./pages/RequireOnboarded";
 import OnboardingPage from "./pages/OnboardingPage";
 import DashboardPage from "./pages/DashboardPage";
 import NewPropertyPage from "./pages/NewPropertyPage";
+import EditPropertyPage from "./pages/EditPropertyPage";
+import PropertyDetailPage from "./pages/PropertyDetailPage";
 
 export default function App() {
   return (
@@ -27,6 +29,14 @@ export default function App() {
             <Route
               path="/proprietaire/biens/nouveau"
               element={<NewPropertyPage />}
+            />
+            <Route
+              path="/proprietaire/biens/:id"
+              element={<PropertyDetailPage />}
+            />
+            <Route
+              path="/proprietaire/biens/:id/modifier"
+              element={<EditPropertyPage />}
             />
           </Route>
         </Route>

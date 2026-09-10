@@ -24,17 +24,17 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section id="how" className="relative py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
+    <section id="how" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
       <div className="absolute inset-0 kh-mesh-bg opacity-50" />
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-10">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
         {/* Titre */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="text-center max-w-2xl mx-auto mb-16"
+          className="text-center max-w-2xl mx-auto mb-10 sm:mb-16"
         >
           <span className="text-sm font-bold text-[var(--kh-blue-2)] uppercase tracking-wider">
             Simple comme un message
@@ -66,7 +66,7 @@ export default function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.6, delay: i * 0.15 }}
-              className="relative kh-glass rounded-3xl p-8 hover:bg-[var(--kh-surface)] transition-colors group bg-[var(--kh-bg-soft)]"
+              className="relative kh-glass rounded-3xl p-6 sm:p-8 hover:bg-[var(--kh-surface)] transition-colors group bg-[var(--kh-bg-soft)]"
             >
               {/* Numéro */}
               <div className="text-5xl font-extrabold text-[var(--kh-blue)]/10 mb-4 group-hover:text-[var(--kh-blue)]/25 transition-colors">

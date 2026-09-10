@@ -37,7 +37,7 @@ export default function Footer() {
   const { openLogin } = useAuthModal();
   const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
   return (
-    <footer className="relative border-t border-[var(--kh-border)] py-12 px-6 lg:px-10 bg-[var(--kh-bg)]">
+    <footer className="relative border-t border-[var(--kh-border)] py-10 sm:py-12 px-4 sm:px-6 lg:px-10 bg-[var(--kh-bg)] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
           {/* Logo + tagline */}

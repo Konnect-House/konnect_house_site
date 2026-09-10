@@ -11,7 +11,7 @@ export default function RequireProvider() {
     );
   }
   if (!token) return <Navigate to="/?auth=connexion" replace />;
-  if (user && user.role !== "PROVIDER" && user.role !== "ADMIN") {
+  if (user && user.role !== "PROVIDER") {
     return <Navigate to="/?auth=connexion" replace />;
   }
   return <Outlet />;

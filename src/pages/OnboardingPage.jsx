@@ -93,7 +93,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-6 py-16">
+    <main className="max-w-md mx-auto px-4 sm:px-6 py-8 sm:py-16">
       <p className="text-sm font-bold uppercase tracking-wider text-[var(--kh-blue-2)]">
         Étape 2 sur 2
       </p>

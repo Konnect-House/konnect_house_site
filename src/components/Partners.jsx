@@ -12,9 +12,9 @@ export default function Partners() {
   const { openLogin, openRegister } = useAuthModal();
   const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
   return (
-    <section id="partners" className="relative py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <section id="partners" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -57,7 +57,7 @@ export default function Partners() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="kh-glass rounded-3xl p-8 lg:p-10 bg-[var(--kh-bg-soft)]"
+            className="kh-glass rounded-3xl p-5 sm:p-8 lg:p-10 bg-[var(--kh-bg-soft)]"
           >
             <div className="flex items-center gap-3 mb-6">
               <div

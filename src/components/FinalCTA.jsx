@@ -6,14 +6,14 @@ const whatsappLink = "https://wa.me/243821616193?text=Menu";
 
 export default function FinalCTA() {
   return (
-    <section className="relative h-full min-h-screen flex items-center justify-center bg-[var(--kh-bg)]">
-      <div className="w-full max-w-5xl mx-auto px-6 lg:px-10">
+    <section className="relative py-16 sm:py-24 lg:min-h-screen lg:flex lg:items-center lg:justify-center bg-[var(--kh-bg)]">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="relative rounded-[2.5rem] overflow-hidden text-center px-8 py-16 lg:py-24 kh-glow"
+          className="relative rounded-[1.75rem] sm:rounded-[2.5rem] overflow-hidden text-center px-5 py-12 sm:px-8 sm:py-16 lg:py-24 kh-glow"
           style={{
             background:
               "linear-gradient(135deg, rgba(1,26,102,0.08) 0%, rgba(52,120,171,0.05) 100%)",
@@ -55,7 +55,7 @@ export default function FinalCTA() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
               whileHover={{ scale: 1.05 }}
-              className="group inline-flex items-center gap-3 mt-10 px-8 py-4 rounded-full text-lg font-bold text-white kh-gradient-btn kh-glow"
+              className="group inline-flex items-center justify-center gap-3 mt-8 sm:mt-10 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-base sm:text-lg font-bold text-white kh-gradient-btn kh-glow w-full sm:w-auto min-h-12"
             >
               <FaWhatsapp className="text-2xl" />
               Démarrer sur WhatsApp

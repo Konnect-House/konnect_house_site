@@ -48,15 +48,15 @@ export default function Navbar() {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 pt-[env(safe-area-inset-top)] ${
         menuOpen
-          ? "bg-[var(--kh-bg)] py-4"
+          ? "bg-[var(--kh-bg)] py-3"
           : scrolled
-            ? "kh-glass py-3 shadow-md"
-            : "bg-transparent py-5"
+            ? "kh-glass py-2.5 shadow-md"
+            : "bg-transparent py-3 sm:py-5"
       }`}
     >
-      <nav className="max-w-7xl mx-auto px-6 lg:px-10 flex items-center justify-between">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between min-h-12">
         <a
           href="#top"
           onClick={(e) => {
@@ -66,7 +66,7 @@ export default function Navbar() {
           }}
           className="flex items-center gap-2 shrink-0 relative z-[70]"
         >
-          <img src={logo} alt="Konnect House" className="h-10 w-auto" />
+          <img src={logo} alt="Konnect House" className="h-8 sm:h-10 w-auto" />
         </a>
 
         <ul className="hidden lg:flex items-center gap-8">
@@ -119,7 +119,7 @@ export default function Navbar() {
         </div>
 
         <button
-          className="lg:hidden relative z-[70] text-[var(--kh-text)] text-2xl p-1"
+          className="lg:hidden relative z-[70] text-[var(--kh-text)] text-2xl p-2 min-w-11 min-h-11 flex items-center justify-center"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label={menuOpen ? "Fermer le menu" : "Menu"}
         >
@@ -136,7 +136,7 @@ export default function Navbar() {
             transition={{ duration: 0.2 }}
             className="lg:hidden fixed inset-0 z-[60] bg-[var(--kh-bg)]"
           >
-            <div className="h-full overflow-y-auto pt-24 px-6 pb-10">
+            <div className="h-full overflow-y-auto pt-24 px-4 sm:px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
               <ul className="flex flex-col gap-1 max-w-md mx-auto">
                 {navLinks.map((link) => (
                   <li key={link.href}>

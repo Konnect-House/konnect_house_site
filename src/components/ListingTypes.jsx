@@ -6,19 +6,19 @@ const listings = [
   {
     title: "Pour une soirée",
     desc: "Lieux élégants pour vos événements, anniversaires et célébrations à Kinshasa.",
-    img: "https://images.unsplash.com/photo-1519167758481-83f550bb49cd?auto=format&fit=crop&w=800&q=80",
+    img: "/listings/soiree.jpg",
     tag: "Événementiel",
   },
   {
     title: "Court séjour",
     desc: "Appartements meublés pour quelques jours ou semaines. Confort hôtelier, prix juste.",
-    img: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80",
+    img: "/listings/court-sejour.jpg",
     tag: "Temporaire",
   },
   {
     title: "Longue durée",
     desc: "Studios, appartements et maisons pour plusieurs mois. Sereinement.",
-    img: "https://images.unsplash.com/photo-1560448204-e02f11c3d029?auto=format&fit=crop&w=800&q=80",
+    img: "/listings/longue-duree.jpg",
     tag: "Résidentiel",
   },
 ];
@@ -27,15 +27,15 @@ const listingWhatsapp = "https://wa.me/243821616193?text=Menu";
 
 export default function ListingTypes() {
   return (
-    <section id="listings" className="relative py-24 lg:py-32 bg-[var(--kh-bg)]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+    <section id="listings" className="relative py-16 sm:py-24 lg:py-32 bg-[var(--kh-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
         {/* Titre */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14"
+          className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 sm:gap-6 mb-10 sm:mb-14"
         >
           <div className="max-w-xl">
             <span className="text-sm font-bold text-[var(--kh-blue-2)] uppercase tracking-wider">
@@ -67,11 +67,12 @@ export default function ListingTypes() {
               className="group relative rounded-3xl overflow-hidden kh-glass block bg-[var(--kh-bg-soft)]"
             >
               {/* Image */}
-              <div className="relative h-64 overflow-hidden">
+              <div className="relative h-48 sm:h-64 overflow-hidden">
                 <img
                   src={item.img}
                   alt={item.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                  className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[var(--kh-bg)] via-[var(--kh-bg)]/30 to-transparent" />
                 <span className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold text-[var(--kh-primary)] kh-glass">

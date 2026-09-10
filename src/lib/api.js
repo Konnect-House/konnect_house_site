@@ -1,6 +1,6 @@
 const BASE = String(
   import.meta.env.VITE_API_URL ??
-    "https://konnect-house-backend-mpmh.onrender.com",
+    "https://konnect-house-backend-production.up.railway.app",
 ).replace(/\/$/, "");
 
 export function apiUrl(path) {

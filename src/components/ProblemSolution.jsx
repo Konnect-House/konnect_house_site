@@ -17,15 +17,15 @@ const solutions = [
 
 export default function ProblemSolution() {
   return (
-    <section className="relative py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-10">
+    <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-[var(--kh-bg)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
         {/* Titre */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.6 }}
-          className="text-center max-w-2xl mx-auto mb-16"
+          className="text-center max-w-2xl mx-auto mb-10 sm:mb-16"
         >
           <span className="text-sm font-bold text-[var(--kh-blue-2)] uppercase tracking-wider">
             Le problème
@@ -44,7 +44,7 @@ export default function ProblemSolution() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6 }}
-            className="kh-glass rounded-3xl p-8 lg:p-10"
+            className="kh-glass rounded-3xl p-5 sm:p-8 lg:p-10"
           >
             <h3 className="text-xl font-bold text-[var(--kh-text)] mb-6 flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center">
@@ -75,7 +75,7 @@ export default function ProblemSolution() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6 }}
-            className="rounded-3xl p-8 lg:p-10 kh-glow"
+            className="rounded-3xl p-5 sm:p-8 lg:p-10 kh-glow"
             style={{
               background:
                 "linear-gradient(135deg, rgba(1,26,102,0.08) 0%, rgba(52,120,171,0.06) 100%)",
