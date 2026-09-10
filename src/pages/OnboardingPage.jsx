@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import {
+  fileToDataUrl,
+  ID_DOCUMENT_TYPES,
+  isMediaUrl,
+} from "../lib/media";
 
 const fieldClass =
   "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
@@ -54,6 +59,12 @@ const STEPS = [
       "Indiquez combien de biens vous gérez et de quels types. Vous pourrez les publier ensuite, un par un.",
   },
   {
+    id: "kyc",
+    title: "Vérification d’identité (KYC)",
+    subtitle:
+      "Uploadez une pièce d’identité officielle. Un administrateur Konnect House la vérifiera avant d’activer votre compte (CDC §4.4.2).",
+  },
+  {
     id: "payouts",
     title: "Contact & reversements",
     subtitle:
@@ -81,6 +92,8 @@ function emptyForm(user) {
     homeCity: p?.homeCity || "Kinshasa",
     propertyCount: p?.propertyCount != null ? String(p.propertyCount) : "1",
     propertyTypes: p?.propertyTypes?.length ? [...p.propertyTypes] : [],
+    idDocumentType: p?.idDocumentType || "NATIONAL_ID",
+    idDocumentUrl: p?.idDocumentUrl || "",
     mobileMoneyNumber: p?.mobileMoneyNumber || "",
     bankAccount: p?.bankAccount || "",
     acceptedPaymentMethods: p?.acceptedPaymentMethods?.length
@@ -117,6 +130,8 @@ export default function OnboardingPage() {
         propertyTypes: f.propertyTypes.length
           ? f.propertyTypes
           : next.propertyTypes,
+        idDocumentType: f.idDocumentType || next.idDocumentType,
+        idDocumentUrl: f.idDocumentUrl || next.idDocumentUrl,
         mobileMoneyNumber: f.mobileMoneyNumber || next.mobileMoneyNumber,
         bankAccount: f.bankAccount || next.bankAccount,
         acceptedPaymentMethods: f.acceptedPaymentMethods.length
@@ -138,14 +153,8 @@ export default function OnboardingPage() {
   }, []);
 
   const meta = STEPS[step];
-  const avatarOk = useMemo(() => {
-    try {
-      const u = new URL(form.avatarUrl);
-      return u.protocol === "http:" || u.protocol === "https:";
-    } catch {
-      return false;
-    }
-  }, [form.avatarUrl]);
+  const avatarOk = useMemo(() => isMediaUrl(form.avatarUrl), [form.avatarUrl]);
+  const docOk = useMemo(() => isMediaUrl(form.idDocumentUrl), [form.idDocumentUrl]);
 
   if (user?.role === "PROVIDER" && !user.needsOnboarding) {
     return <Navigate to="/proprietaire" replace />;
@@ -153,6 +162,16 @@ export default function OnboardingPage() {
 
   function setField(name, value) {
     setForm((f) => ({ ...f, [name]: value }));
+  }
+
+  async function onMediaFile(field, file) {
+    try {
+      const url = await fileToDataUrl(file);
+      setField(field, url);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Upload impossible.");
+    }
   }
 
   function toggleMethod(id) {
@@ -183,7 +202,7 @@ export default function OnboardingPage() {
         return "Indiquez votre nom complet.";
       }
       if (!avatarOk) {
-        return "Ajoutez une URL https de photo de profil (comme pour les photos de biens).";
+        return "Ajoutez une photo de profil (fichier ou URL https).";
       }
       if (!form.dateOfBirth) return "Indiquez votre date de naissance.";
       const birth = new Date(form.dateOfBirth);
@@ -208,6 +227,13 @@ export default function OnboardingPage() {
       }
       if (form.propertyTypes.length < 1) {
         return "Sélectionnez au moins un type de bien.";
+      }
+      return "";
+    }
+    if (index === 2) {
+      if (!form.idDocumentType) return "Choisissez le type de pièce.";
+      if (!docOk) {
+        return "Uploadez votre pièce d’identité (image ou PDF, max 2,5 Mo).";
       }
       return "";
     }
@@ -241,7 +267,7 @@ export default function OnboardingPage() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    const msg = validateStep(2);
+    const msg = validateStep(3);
     if (msg) {
       setError(msg);
       return;
@@ -260,6 +286,8 @@ export default function OnboardingPage() {
         homeCity: form.homeCity.trim() || "Kinshasa",
         propertyCount: Number(form.propertyCount),
         propertyTypes: form.propertyTypes,
+        idDocumentType: form.idDocumentType,
+        idDocumentUrl: form.idDocumentUrl.trim(),
         mobileMoneyNumber: form.mobileMoneyNumber.trim() || undefined,
         bankAccount: form.bankAccount.trim() || undefined,
         acceptedPaymentMethods: form.acceptedPaymentMethods,
@@ -296,7 +324,7 @@ export default function OnboardingPage() {
       <p className="mt-2 text-[var(--kh-text-muted)]">{meta.subtitle}</p>
 
       <form
-        onSubmit={step === 2 ? onSubmit : (e) => e.preventDefault()}
+        onSubmit={step === 3 ? onSubmit : (e) => e.preventDefault()}
         className="mt-8 space-y-5"
       >
         {step === 0 ? (
@@ -320,16 +348,23 @@ export default function OnboardingPage() {
                   Photo de profil
                 </label>
                 <input
-                  required
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    e.target.files?.[0] &&
+                    onMediaFile("avatarUrl", e.target.files[0])
+                  }
+                  className="block w-full text-sm"
+                />
+                <input
                   type="url"
-                  placeholder="https://… (URL de votre photo)"
-                  value={form.avatarUrl}
+                  placeholder="Ou URL https de photo"
+                  value={form.avatarUrl.startsWith("data:") ? "" : form.avatarUrl}
                   onChange={(e) => setField("avatarUrl", e.target.value)}
                   className={fieldClass}
                 />
                 <p className="text-xs text-[var(--kh-text-muted)]">
-                  Préremplie depuis Google si disponible. Sinon collez un lien
-                  public (Imgur, Drive, etc.).
+                  Préremplie depuis Google si disponible.
                 </p>
               </div>
             </div>
@@ -459,6 +494,47 @@ export default function OnboardingPage() {
         ) : null}
 
         {step === 2 ? (
+          <>
+            <select
+              value={form.idDocumentType}
+              onChange={(e) => setField("idDocumentType", e.target.value)}
+              className={fieldClass}
+            >
+              {ID_DOCUMENT_TYPES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={(e) =>
+                e.target.files?.[0] &&
+                onMediaFile("idDocumentUrl", e.target.files[0])
+              }
+              className="block w-full text-sm"
+            />
+            {docOk && form.idDocumentUrl.startsWith("data:image/") ? (
+              <img
+                src={form.idDocumentUrl}
+                alt="Aperçu pièce"
+                className="max-h-48 rounded-xl border border-[var(--kh-border)]"
+              />
+            ) : null}
+            {docOk ? (
+              <p className="text-sm text-emerald-600">
+                Document prêt — l’admin pourra le consulter pour valider votre identité.
+              </p>
+            ) : (
+              <p className="text-xs text-[var(--kh-text-muted)]">
+                Photo nette recto (ou PDF). Max 2,5 Mo.
+              </p>
+            )}
+          </>
+        ) : null}
+
+        {step === 3 ? (
           <>
             <input
               type="tel"

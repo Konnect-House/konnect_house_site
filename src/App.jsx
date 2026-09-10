@@ -4,7 +4,9 @@ import ProviderLayout from "./pages/ProviderLayout";
 import RequireProvider from "./pages/RequireProvider";
 import RequireOnboarded from "./pages/RequireOnboarded";
 import OnboardingPage from "./pages/OnboardingPage";
+import ProviderHomePage from "./pages/ProviderHomePage";
 import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import NewPropertyPage from "./pages/NewPropertyPage";
 import EditPropertyPage from "./pages/EditPropertyPage";
 import PropertyDetailPage from "./pages/PropertyDetailPage";
@@ -25,7 +27,9 @@ export default function App() {
         <Route element={<RequireProvider />}>
           <Route path="/proprietaire/onboarding" element={<OnboardingPage />} />
           <Route element={<RequireOnboarded />}>
-            <Route path="/proprietaire" element={<DashboardPage />} />
+            <Route path="/proprietaire" element={<ProviderHomePage />} />
+            <Route path="/proprietaire/gestion" element={<DashboardPage />} />
+            <Route path="/proprietaire/profil" element={<ProfilePage />} />
             <Route
               path="/proprietaire/biens/nouveau"
               element={<NewPropertyPage />}

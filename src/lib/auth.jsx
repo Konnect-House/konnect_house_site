@@ -70,6 +70,15 @@ export function AuthProvider({ children }) {
         setUser(data);
         return data;
       },
+      async updateProfile(payload) {
+        const data = await api("/auth/provider/profile", {
+          token,
+          method: "PATCH",
+          body: payload,
+        });
+        setUser(data);
+        return data;
+      },
       logout() {
         localStorage.removeItem(KEY);
         setToken("");

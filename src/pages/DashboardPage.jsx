@@ -72,7 +72,7 @@ export default function DashboardPage() {
             Espace fournisseur
           </p>
           <h1 className="mt-2 text-3xl font-extrabold text-[var(--kh-primary)]">
-            Bonjour {user?.fullName?.split(" ")[0] || ""}
+            Mes biens & réservations
           </h1>
           <p className="mt-1 text-[var(--kh-text-muted)]">
             Gérez vos maisons de passage, disponibilités et réservations.

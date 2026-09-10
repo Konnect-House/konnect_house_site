@@ -52,10 +52,25 @@ function IconLogout({ className }) {
   );
 }
 
+function IconUser({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M5 19.5c1.8-3.2 4.2-4.5 7-4.5s5.2 1.3 7 4.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 const NAV = [
-  { to: "/", label: "Accueil", Icon: IconHome, end: true },
-  { to: "/proprietaire", label: "Tableau de bord", Icon: IconDashboard, end: true },
+  { to: "/proprietaire", label: "Accueil", Icon: IconHome, end: true },
+  { to: "/proprietaire/gestion", label: "Mes biens", Icon: IconDashboard, end: true },
   { to: "/proprietaire/biens/nouveau", label: "Nouveau bien", Icon: IconPlus, end: false },
+  { to: "/proprietaire/profil", label: "Profil", Icon: IconUser, end: true },
 ];
 
 export default function ProviderLayout() {
@@ -90,11 +105,13 @@ export default function ProviderLayout() {
   }
 
   const current =
-    NAV.find((item) =>
-      item.end
-        ? location.pathname === item.to
-        : location.pathname.startsWith(item.to),
-    ) || NAV[1];
+    [...NAV]
+      .sort((a, b) => b.to.length - a.to.length)
+      .find((item) =>
+        item.end
+          ? location.pathname === item.to
+          : location.pathname.startsWith(item.to),
+      ) || NAV[0];
 
   return (
     <div className="flex min-h-dvh bg-[var(--kh-bg)] text-[var(--kh-text)]">
