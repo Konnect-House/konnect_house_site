@@ -16,6 +16,13 @@ const FALLBACK = {
     { id: "salle_de_bain_privee", label: "Salle de bain privée" },
     { id: "tv", label: "TV" },
   ],
+  accessPreferences: [
+    { id: "pres_macadam", label: "Près du macadam / grande voie" },
+    { id: "acces_facile", label: "Accès facile (voiture)" },
+    { id: "quartier_calme", label: "Quartier calme" },
+    { id: "proche_commerces", label: "Proche commerces / marché" },
+    { id: "proche_transports", label: "Proche transports" },
+  ],
 };
 
 function emptyForm(initial) {
@@ -36,6 +43,7 @@ function emptyForm(initial) {
     gpsLat: initial?.gpsLat != null ? String(initial.gpsLat) : "",
     gpsLng: initial?.gpsLng != null ? String(initial.gpsLng) : "",
     amenities: initial?.amenities || [],
+    accessTags: initial?.accessTags || [],
     photos,
   };
 }
@@ -60,6 +68,9 @@ export default function PropertyForm({
         setCatalog({
           communes: data.communes?.length ? data.communes : FALLBACK.communes,
           amenities: data.amenities?.length ? data.amenities : FALLBACK.amenities,
+          accessPreferences: data.accessPreferences?.length
+            ? data.accessPreferences
+            : FALLBACK.accessPreferences,
         });
       })
       .catch(() => {});
@@ -93,6 +104,18 @@ export default function PropertyForm({
     });
   }
 
+  function toggleAccessTag(id) {
+    setForm((f) => {
+      const has = f.accessTags.includes(id);
+      return {
+        ...f,
+        accessTags: has
+          ? f.accessTags.filter((a) => a !== id)
+          : [...f.accessTags, id],
+      };
+    });
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     const photos = form.photos.map((p) => p.trim()).filter(Boolean);
@@ -111,6 +134,7 @@ export default function PropertyForm({
       neighborhood: form.neighborhood || undefined,
       conditions: form.conditions || undefined,
       amenities: form.amenities,
+      accessTags: form.accessTags,
       photos,
       category: "MAISON_DE_PASSAGE",
       gpsLat: form.gpsLat ? Number(form.gpsLat) : undefined,
@@ -222,7 +246,7 @@ export default function PropertyForm({
       />
       <fieldset>
         <legend className="text-sm font-semibold text-[var(--kh-primary)] mb-2">
-          Équipements
+          Équipements (affichés sur la fiche WhatsApp)
         </legend>
         <div className="grid sm:grid-cols-2 gap-2">
           {catalog.amenities.map((a) => (
@@ -234,6 +258,29 @@ export default function PropertyForm({
                 type="checkbox"
                 checked={form.amenities.includes(a.id)}
                 onChange={() => toggleAmenity(a.id)}
+              />
+              {a.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend className="text-sm font-semibold text-[var(--kh-primary)] mb-2">
+          Accessibilité / emplacement
+        </legend>
+        <p className="text-xs text-[var(--kh-text-muted)] mb-2">
+          Sert au matching du bot (macadam, accès voiture, etc.).
+        </p>
+        <div className="grid sm:grid-cols-2 gap-2">
+          {catalog.accessPreferences.map((a) => (
+            <label
+              key={a.id}
+              className="flex items-center gap-2 text-sm text-[var(--kh-text)]"
+            >
+              <input
+                type="checkbox"
+                checked={form.accessTags.includes(a.id)}
+                onChange={() => toggleAccessTag(a.id)}
               />
               {a.label}
             </label>
