@@ -79,7 +79,8 @@ export default function EditPropertyPage() {
         Modifier le logement
       </h1>
       <p className="mt-2 text-[var(--kh-text-muted)]">
-        Prix, équipements, description, photos et adresse.
+        Prix, équipements, description, photos et adresse. Après enregistrement,
+        le bien repasse en vérification admin avant d’être visible sur le bot.
       </p>
       <div className="mt-8">
         <PropertyForm

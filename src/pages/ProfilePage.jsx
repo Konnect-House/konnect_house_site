@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { api, uploadFile } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { ID_DOCUMENT_TYPES, isHttpUrl, KYC_LABELS } from "../lib/media";
+import { isValidWhatsAppPhone } from "../lib/phone";
 
 const fieldClass =
   "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
@@ -133,6 +134,10 @@ export default function ProfilePage() {
     e.preventDefault();
     setOk("");
     setError("");
+    if (!isValidWhatsAppPhone(form.phone)) {
+      setError("Numéro WhatsApp obligatoire (ex. +243 8XX XXX XXX).");
+      return;
+    }
     if (!avatarOk) {
       setError("Uploadez une photo de profil.");
       return;
@@ -216,7 +221,20 @@ export default function ProfilePage() {
         </div>
 
         <input required minLength={2} placeholder="Nom complet" value={form.fullName} onChange={(e) => setField("fullName", e.target.value)} className={fieldClass} />
-        <input type="tel" required minLength={9} placeholder="WhatsApp" value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={fieldClass} />
+        <label className="block space-y-1.5">
+          <span className="text-sm font-semibold text-[var(--kh-primary)]">
+            Numéro WhatsApp <span className="text-red-500">*</span>
+          </span>
+          <input
+            type="tel"
+            required
+            minLength={9}
+            placeholder="+243 8XX XXX XXX"
+            value={form.phone}
+            onChange={(e) => setField("phone", e.target.value)}
+            className={fieldClass}
+          />
+        </label>
         <input type="date" required value={form.dateOfBirth} onChange={(e) => setField("dateOfBirth", e.target.value)} className={fieldClass} />
         <input required placeholder="Profession" value={form.profession} onChange={(e) => setField("profession", e.target.value)} className={fieldClass} />
         <input required placeholder="Adresse" value={form.homeAddress} onChange={(e) => setField("homeAddress", e.target.value)} className={fieldClass} />

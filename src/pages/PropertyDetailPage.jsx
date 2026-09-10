@@ -117,7 +117,7 @@ export default function PropertyDetailPage() {
               }
               className="px-4 py-2 rounded-xl bg-[var(--kh-primary)] text-white font-semibold text-sm disabled:opacity-60"
             >
-              Réactiver
+              Demander republication
             </button>
           ) : property.status !== "ARCHIVED" ? (
             <button

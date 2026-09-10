@@ -5,6 +5,7 @@ import { useAuth } from "../lib/auth";
 import { api, uploadFile } from "../lib/api";
 import { ID_DOCUMENT_TYPES, isHttpUrl } from "../lib/media";
 import BrandLogo from "../components/BrandLogo";
+import { isValidWhatsAppPhone } from "../lib/phone";
 
 const fieldClass =
   "w-full px-3.5 py-2.5 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40 text-sm";
@@ -50,7 +51,7 @@ const STEPS = [
   {
     id: "payouts",
     title: "Contact & reversements",
-    subtitle: "WhatsApp et moyens de paiement.",
+    subtitle: "WhatsApp obligatoire et moyens de paiement.",
   },
 ];
 
@@ -253,8 +254,8 @@ export default function OnboardingPage() {
       if (!docOk) return "Uploadez votre pièce d’identité.";
       return "";
     }
-    if (form.phone.trim().length < 9) {
-      return "Indiquez un numéro WhatsApp valide.";
+    if (!isValidWhatsAppPhone(form.phone)) {
+      return "Numéro WhatsApp obligatoire (ex. +243 8XX XXX XXX).";
     }
     if (form.acceptedPaymentMethods.length < 1) {
       return "Cochez au moins un moyen de paiement.";
@@ -571,15 +572,25 @@ export default function OnboardingPage() {
 
               {step === 3 ? (
                 <>
-                  <input
-                    type="tel"
-                    required
-                    minLength={9}
-                    placeholder="Téléphone WhatsApp"
-                    value={form.phone}
-                    onChange={(e) => setField("phone", e.target.value)}
-                    className={fieldClass}
-                  />
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-semibold text-[var(--kh-primary)]">
+                      Numéro WhatsApp <span className="text-red-500">*</span>
+                    </span>
+                    <input
+                      type="tel"
+                      required
+                      minLength={9}
+                      placeholder="+243 8XX XXX XXX"
+                      value={form.phone}
+                      onChange={(e) => setField("phone", e.target.value)}
+                      className={fieldClass}
+                      autoComplete="tel"
+                    />
+                    <span className="text-xs text-[var(--kh-text-muted)]">
+                      Obligatoire — les clients et l’admin vous contactent sur ce
+                      numéro.
+                    </span>
+                  </label>
                   <fieldset>
                     <legend className="mb-2 text-sm font-semibold text-[var(--kh-primary)]">
                       Moyens de paiement
