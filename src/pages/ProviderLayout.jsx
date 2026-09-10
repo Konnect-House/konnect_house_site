@@ -114,7 +114,7 @@ export default function ProviderLayout() {
       ) || NAV[0];
 
   return (
-    <div className="flex min-h-dvh bg-[var(--kh-bg)] text-[var(--kh-text)]">
+    <div className="flex h-dvh overflow-hidden bg-[var(--kh-bg)] text-[var(--kh-text)]">
       <button
         type="button"
         aria-label="Fermer le menu"
@@ -125,7 +125,7 @@ export default function ProviderLayout() {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(100%,18rem)] flex-col bg-[#011A66] text-white shadow-xl transition-transform duration-200 lg:static lg:z-auto lg:h-auto lg:min-h-screen lg:shrink-0 lg:shadow-none ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(100%,18rem)] flex-col bg-[#011A66] text-white shadow-xl transition-[transform,width] duration-200 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         } ${collapsed ? "lg:w-[76px]" : "lg:w-64"}`}
       >
@@ -225,8 +225,12 @@ export default function ProviderLayout() {
         ) : null}
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-[var(--kh-border)] bg-[var(--kh-bg-soft)]/95 px-4 py-3 backdrop-blur lg:hidden">
+      <div
+        className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden transition-[margin] duration-200 ${
+          collapsed ? "lg:ml-[76px]" : "lg:ml-64"
+        }`}
+      >
+        <header className="sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-[var(--kh-border)] bg-[var(--kh-bg-soft)]/95 px-4 py-3 backdrop-blur lg:hidden">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -244,7 +248,7 @@ export default function ProviderLayout() {
             <p className="truncate text-xs text-[var(--kh-text-muted)]">Propriétaire</p>
           </div>
         </header>
-        <div className="flex-1 overflow-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <Outlet />
         </div>
       </div>

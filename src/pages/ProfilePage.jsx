@@ -186,8 +186,7 @@ export default function ProfilePage() {
         Mes informations
       </h1>
       <p className="mt-2 text-[var(--kh-text-muted)]">
-        Modifiez votre identité, vos moyens de paiement et votre pièce KYC via
-        upload (CDN Neon).
+        Modifiez votre identité, vos moyens de paiement et votre pièce KYC.
       </p>
       <p className="mt-3 text-sm font-semibold text-[var(--kh-primary)]">
         Statut : {KYC_LABELS[kyc] || kyc || "—"} · compte {user.status}
