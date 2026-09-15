@@ -41,7 +41,7 @@ function extractMessages(body) {
 
 async function forwardToNest(messages) {
   if (!messages.length) return;
-  const url = `${NEST_API_URL}/api/whatsapp/incoming`;
+  const url = `${NEST_API_URL}/api/bot/preview`;
   const headers = { "Content-Type": "application/json" };
   if (BOT_SECRET) headers["x-bot-secret"] = BOT_SECRET;
 
