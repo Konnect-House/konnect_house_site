@@ -5,9 +5,8 @@ const BOT_PHONE =
     "",
   );
 
-/** Message prérempli — ouvre la conversation de façon naturelle (CDC). */
-export const WHATSAPP_OPENER =
-  "Bonjour Konnect House, je cherche une maison de passage à Kinshasa";
+/** Message prérempli — ouverture neutre (le bot propose ensuite les choix). */
+export const WHATSAPP_OPENER = "Bonjour Konnect House";
 
 export function whatsappBotLink(text = WHATSAPP_OPENER) {
   return `https://wa.me/${BOT_PHONE}?text=${encodeURIComponent(text)}`;
