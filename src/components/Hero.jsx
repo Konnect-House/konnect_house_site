@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
 import { FiArrowRight } from "react-icons/fi";
+import { whatsappBotLink } from "../lib/whatsapp";
 
 const container = {
   hidden: {},
@@ -18,7 +19,7 @@ const item = {
   },
 };
 
-const whatsappLink = "https://wa.me/243821616193?text=Menu";
+const whatsappLink = whatsappBotLink();
 
 export default function Hero() {
   return (

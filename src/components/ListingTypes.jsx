@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
 import { FiArrowUpRight } from "react-icons/fi";
+import { whatsappBotLink } from "../lib/whatsapp";
 
 const listings = [
   {
@@ -23,7 +24,7 @@ const listings = [
   },
 ];
 
-const listingWhatsapp = "https://wa.me/243821616193?text=Menu";
+const listingWhatsapp = whatsappBotLink();
 
 export default function ListingTypes() {
   return (

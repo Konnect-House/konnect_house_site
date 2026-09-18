@@ -8,11 +8,12 @@ import {
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
 import BrandLogo from "./BrandLogo";
+import { whatsappBotLink } from "../lib/whatsapp";
 
 const socials = [
   {
     icon: FaWhatsapp,
-    href: "https://wa.me/243829790981?text=Salut%20Konnect%20House",
+    href: whatsappBotLink(),
     label: "WhatsApp",
   },
   {
@@ -74,7 +75,7 @@ export default function Footer() {
               Conditions d'utilisation
             </a>
             <a
-              href="https://wa.me/243821616193?text=Menu"
+              href={whatsappBotLink()}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[var(--kh-primary)] transition"

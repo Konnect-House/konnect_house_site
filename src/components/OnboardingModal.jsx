@@ -4,8 +4,9 @@ import { FaWhatsapp, FaHome, FaArrowRight } from "react-icons/fa";
 import { FiCheck, FiX } from "react-icons/fi";
 import BrandLogo from "./BrandLogo";
 import { useAuthModal } from "../lib/authModal";
+import { whatsappBotLink } from "../lib/whatsapp";
 
-const SEEKER_LINK = "https://wa.me/243821616193?text=Menu";
+const SEEKER_LINK = whatsappBotLink();
 const BACKDROP_KEY = "kh-onboarding-seen";
 
 export default function OnboardingModal() {

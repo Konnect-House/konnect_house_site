@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { FiHome, FiCheckCircle } from "react-icons/fi";
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
+import { whatsappPartnerLink } from "../lib/whatsapp";
 
-const partnerWhatsapp =
-  "https://wa.me/243821616193?text=Bonjour%20Konnect%20House%2C%20je%20suis%20propri%C3%A9taire%20et%20je%20veux%20devenir%20partenaire";
+const partnerWhatsapp = whatsappPartnerLink();
 
 export default function Partners() {
   const { user } = useAuth();

@@ -7,6 +7,7 @@ import useTheme from "../hooks/useTheme";
 import { useAuth } from "../lib/auth";
 import { useAuthModal } from "../lib/authModal";
 import BrandLogo from "./BrandLogo";
+import { whatsappBotLink } from "../lib/whatsapp";
 
 const navLinks = [
   { label: "Comment ça marche", href: "#how" },
@@ -108,7 +109,7 @@ export default function Navbar() {
             </button>
           )}
           <a
-            href="https://wa.me/243821616193?text=Menu"
+            href={whatsappBotLink()}
             target="_blank"
             rel="noopener noreferrer"
             className="kh-gradient-btn kh-glow inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-transform hover:scale-105"
@@ -172,7 +173,7 @@ export default function Navbar() {
                 </li>
                 <li className="mt-2">
                   <a
-                    href="https://wa.me/243821616193?text=Menu"
+                    href={whatsappBotLink()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block text-center px-4 py-3 rounded-xl text-white font-bold kh-gradient-btn"
