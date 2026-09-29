@@ -1,6 +1,6 @@
 /** Numéro WhatsApp Business du bot (indicatif sans +). */
 const BOT_PHONE =
-  (import.meta.env.VITE_WHATSAPP_BOT_PHONE || "243834471129").replace(
+  (import.meta.env.VITE_WHATSAPP_BOT_PHONE || "243803322831").replace(
     /\D/g,
     "",
   );
