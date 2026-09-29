@@ -115,7 +115,8 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
-    // Ack Meta ASAP-ish after processing (Nest reply is the user-facing latency)
+    // Ack Meta immédiatement pour réduire latence / retries, puis forward Nest.
+    let messages = [];
     try {
       const body =
         typeof req.body === "string"
@@ -124,7 +125,7 @@ export default async function handler(req, res) {
 
       console.log("[whatsapp webhook] POST body:", JSON.stringify(body));
 
-      const messages = extractMessages(body);
+      messages = extractMessages(body);
       for (const m of messages) {
         console.log(
           "[whatsapp webhook] message from:",
@@ -133,15 +134,19 @@ export default async function handler(req, res) {
           m.text,
         );
       }
-
-      await forwardToNest(messages);
     } catch (err) {
-      console.error("[whatsapp webhook] POST parse/handle error:", err);
+      console.error("[whatsapp webhook] POST parse error:", err);
     }
 
     res.statusCode = 200;
     res.setHeader("Content-Type", "text/plain");
     res.end("EVENT_RECEIVED");
+
+    try {
+      await forwardToNest(messages);
+    } catch (err) {
+      console.error("[whatsapp webhook] nest forward after ack:", err);
+    }
     return;
   }
 
