@@ -2,7 +2,8 @@
  * Webhook WhatsApp Business Cloud API — Konnect House
  * URL Meta : https://konnect-house-site-eight.vercel.app/api/webhooks/whatsapp
  *
- * Verify Meta ici, puis forward vers Nest (parcours CDC / ConversationService).
+ * IMPORTANT Vercel : attendre le forward Nest AVANT de répondre à Meta.
+ * Sinon la lambda est gelée après res.end() et le bot reste silencieux.
  */
 
 const VERIFY_TOKEN =
@@ -16,6 +17,10 @@ const NEST_API_URL = (
 ).replace(/\/$/, "");
 
 const BOT_SECRET = process.env.BOT_PREVIEW_SECRET || "";
+
+export const config = {
+  maxDuration: 30,
+};
 
 function extractMessages(body) {
   if (!body || body.object !== "whatsapp_business_account") return [];
@@ -46,7 +51,7 @@ async function forwardOne(url, headers, msg) {
     method: "POST",
     headers,
     body: JSON.stringify(msg),
-    signal: AbortSignal.timeout(8_000),
+    signal: AbortSignal.timeout(20_000),
   });
   const raw = await res.text();
   return { status: res.status, raw };
@@ -65,7 +70,7 @@ async function deliverMessage(headers, msg) {
         url,
         msg.phone,
         status,
-        raw.slice(0, 160),
+        raw.slice(0, 240),
       );
       if (status >= 200 && status < 300) return true;
     } catch (err) {
@@ -83,7 +88,6 @@ async function forwardToNest(messages) {
   if (!messages.length) return;
   const headers = { "Content-Type": "application/json" };
   if (BOT_SECRET) headers["x-bot-secret"] = BOT_SECRET;
-  // Parallèle : Nest ack immédiat puis traite (évite files d’attente Meta).
   await Promise.all(messages.map((msg) => deliverMessage(headers, msg)));
 }
 
@@ -111,7 +115,6 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
-    // Ack Meta immédiatement pour réduire latence / retries, puis forward Nest.
     let messages = [];
     try {
       const body =
@@ -134,15 +137,16 @@ export default async function handler(req, res) {
       console.error("[whatsapp webhook] POST parse error:", err);
     }
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/plain");
-    res.end("EVENT_RECEIVED");
-
+    // Traiter d'abord (Nest envoie la réponse WhatsApp), puis ack Meta.
     try {
       await forwardToNest(messages);
     } catch (err) {
-      console.error("[whatsapp webhook] nest forward after ack:", err);
+      console.error("[whatsapp webhook] nest forward error:", err);
     }
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "text/plain");
+    res.end("EVENT_RECEIVED");
     return;
   }
 
