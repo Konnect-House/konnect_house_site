@@ -50,29 +50,65 @@ function loadGsiScript() {
   });
 }
 
+function gisTextForLabel(label) {
+  const l = String(label || "").toLowerCase();
+  if (l.includes("inscri")) return "signup_with";
+  if (l.includes("connect")) return "signin_with";
+  return "continue_with";
+}
+
 /**
- * Bouton Google fiable sur mobile :
- * - callback stable (pas de re-render GIS au milieu d’un tap)
- * - iframe GIS cliquable (opacity > 0 pour iOS Safari)
- * - largeur recalculée quand le modal s’ouvre
+ * Bouton Google fiable sur mobile.
+ * Le libellé visible est toujours `label` (jamais le texte GIS « Continuer avec Google »).
  */
 export default function GoogleButton({
   onCredential,
   disabled,
-  label = "Continuer avec Google",
+  label = "Se connecter avec Google",
 }) {
   const hostRef = useRef(null);
   const gisRef = useRef(null);
   const onCredentialRef = useRef(onCredential);
-  const [ready, setReady] = useState(false);
+  const labelRef = useRef(label);
   const [failed, setFailed] = useState(false);
 
   onCredentialRef.current = onCredential;
+  labelRef.current = label;
 
   useEffect(() => {
     if (!CLIENT_ID) return undefined;
     let cancelled = false;
     let resizeObs;
+
+    const hideGisLayer = () => {
+      if (!gisRef.current) return;
+      gisRef.current.style.opacity = "0";
+      gisRef.current.style.visibility = "hidden";
+    };
+
+    const revealGisLayer = () => {
+      if (!gisRef.current) return;
+      // Couche GIS invisible mais cliquable (iOS n’aime pas opacity:0)
+      gisRef.current.style.visibility = "visible";
+      gisRef.current.style.opacity = "1";
+    };
+
+    const styleTargets = (root) => {
+      const nodes = [
+        ...root.querySelectorAll("iframe"),
+        ...root.querySelectorAll("div[role='button']"),
+      ];
+      for (const target of nodes) {
+        target.style.position = "absolute";
+        target.style.inset = "0";
+        target.style.width = "100%";
+        target.style.height = "100%";
+        target.style.maxWidth = "none";
+        target.style.opacity = "0.02";
+        target.style.cursor = "pointer";
+        target.setAttribute("aria-hidden", "true");
+      }
+    };
 
     const paint = () => {
       if (cancelled || !gisRef.current || !hostRef.current) return;
@@ -83,12 +119,13 @@ export default function GoogleButton({
         280,
       );
       if (width < 200) {
-        // Modal pas encore mesuré — réessayer au frame suivant
         requestAnimationFrame(paint);
         return;
       }
 
+      hideGisLayer();
       gisRef.current.innerHTML = "";
+
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: (res) => {
@@ -99,31 +136,27 @@ export default function GoogleButton({
         itp_support: true,
         use_fedcm_for_prompt: true,
       });
+
       window.google.accounts.id.renderButton(gisRef.current, {
         type: "standard",
         theme: "outline",
         size: "large",
         shape: "pill",
-        text: "continue_with",
+        text: gisTextForLabel(labelRef.current),
         width,
         locale: "fr",
       });
 
-      // Étire l’iframe GIS sur toute la zone tactile (mobile)
-      const iframe = gisRef.current.querySelector("iframe");
-      const btn = gisRef.current.querySelector("div[role='button']");
-      const target = iframe || btn;
-      if (target) {
-        target.style.position = "absolute";
-        target.style.inset = "0";
-        target.style.width = "100%";
-        target.style.height = "100%";
-        target.style.maxWidth = "none";
-        target.style.opacity = "0.02";
-        target.style.cursor = "pointer";
-      }
-      setReady(true);
+      // Masquer le texte GIS avant le prochain paint navigateur
+      styleTargets(gisRef.current);
+      requestAnimationFrame(() => {
+        if (cancelled || !gisRef.current) return;
+        styleTargets(gisRef.current);
+        revealGisLayer();
+      });
     };
+
+    hideGisLayer();
 
     loadGsiScript()
       .then(() => {
@@ -147,6 +180,46 @@ export default function GoogleButton({
       window.removeEventListener("orientationchange", paint);
     };
   }, []);
+
+  // Re-peindre le bouton GIS si le mode login/register change (sans flash de label)
+  useEffect(() => {
+    if (!CLIENT_ID || !window.google?.accounts?.id || !gisRef.current) return;
+    const width = Math.max(
+      Math.floor(hostRef.current?.getBoundingClientRect().width || 0),
+      280,
+    );
+    if (!gisRef.current) return;
+    gisRef.current.style.visibility = "hidden";
+    gisRef.current.style.opacity = "0";
+    gisRef.current.innerHTML = "";
+    window.google.accounts.id.renderButton(gisRef.current, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      shape: "pill",
+      text: gisTextForLabel(label),
+      width,
+      locale: "fr",
+    });
+    const nodes = [
+      ...gisRef.current.querySelectorAll("iframe"),
+      ...gisRef.current.querySelectorAll("div[role='button']"),
+    ];
+    for (const target of nodes) {
+      target.style.position = "absolute";
+      target.style.inset = "0";
+      target.style.width = "100%";
+      target.style.height = "100%";
+      target.style.maxWidth = "none";
+      target.style.opacity = "0.02";
+      target.style.cursor = "pointer";
+    }
+    requestAnimationFrame(() => {
+      if (!gisRef.current) return;
+      gisRef.current.style.visibility = "visible";
+      gisRef.current.style.opacity = "1";
+    });
+  }, [label]);
 
   if (!CLIENT_ID) {
     return (
@@ -175,16 +248,16 @@ export default function GoogleButton({
         aria-hidden
       >
         <GoogleMark />
-        <span>{ready ? label : "Chargement Google…"}</span>
+        <span>{label}</span>
       </div>
-      {/*
-        opacity 0.02 (pas 0) : iOS Safari ignore souvent les taps sur opacity:0.
-        inset-0 + iframe étiré = une seule grosse zone tactile.
-      */}
       <div
         ref={gisRef}
         className="absolute inset-0 z-10 overflow-hidden rounded-full"
-        style={{ WebkitTapHighlightColor: "transparent" }}
+        style={{
+          WebkitTapHighlightColor: "transparent",
+          opacity: 0,
+          visibility: "hidden",
+        }}
       />
     </div>
   );
