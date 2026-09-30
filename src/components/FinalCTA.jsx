@@ -1,11 +1,18 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
-import { FiArrowRight } from "react-icons/fi";
+import { FiArrowRight, FiHome } from "react-icons/fi";
+import { useAuth } from "../lib/auth";
+import { useAuthModal } from "../lib/authModal";
 import { whatsappBotLink } from "../lib/whatsapp";
 
 const whatsappLink = whatsappBotLink();
 
 export default function FinalCTA() {
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+  const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
+
   return (
     <section className="relative py-16 sm:py-24 lg:min-h-screen lg:flex lg:items-center lg:justify-center bg-[var(--kh-bg)]">
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10">
@@ -21,7 +28,6 @@ export default function FinalCTA() {
             border: "1px solid rgba(1,26,102,0.12)",
           }}
         >
-          {/* Décor */}
           <div className="absolute inset-0 kh-mesh-bg opacity-60" />
 
           <div className="relative flex flex-col items-center text-center">
@@ -47,21 +53,42 @@ export default function FinalCTA() {
               immédiatement avec des propositions concrètes.
             </motion.p>
 
-            <motion.a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              whileHover={{ scale: 1.05 }}
-              className="group inline-flex items-center justify-center gap-3 mt-8 sm:mt-10 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-base sm:text-lg font-bold text-white kh-gradient-btn kh-glow w-full sm:w-auto min-h-12"
+              className="mt-8 sm:mt-10 flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:justify-center"
             >
-              <FaWhatsapp className="text-2xl" />
-              Démarrer sur WhatsApp
-              <FiArrowRight className="text-xl transition-transform group-hover:translate-x-1" />
-            </motion.a>
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center justify-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 rounded-full text-base sm:text-lg font-bold text-white kh-gradient-btn kh-glow min-h-12"
+              >
+                <FaWhatsapp className="text-2xl" />
+                Démarrer sur WhatsApp
+                <FiArrowRight className="text-xl transition-transform group-hover:translate-x-1" />
+              </a>
+              {ownerLoggedIn ? (
+                <Link
+                  to="/proprietaire"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-base font-bold text-[var(--kh-primary)] border-2 border-[var(--kh-blue-2)] bg-[var(--kh-bg-soft)] min-h-12"
+                >
+                  <FiHome />
+                  Espace propriétaire
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openLogin}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full text-base font-bold text-[var(--kh-primary)] border-2 border-[var(--kh-blue-2)] bg-[var(--kh-bg-soft)] min-h-12"
+                >
+                  <FiHome />
+                  Espace propriétaire
+                </button>
+              )}
+            </motion.div>
           </div>
         </motion.div>
       </div>

@@ -21,8 +21,8 @@ export default function Partners() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.6 }}
           >
-            <span className="text-sm font-bold text-[var(--kh-blue-2)] uppercase tracking-wider">
-              Propriétaires
+            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--kh-blue-2)]/15 px-3 py-1 text-sm font-bold text-[var(--kh-blue-2)] uppercase tracking-wider">
+              Espace propriétaire
             </span>
             <h2 className="mt-3 text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[var(--kh-primary)]">
               Vous avez un logement à louer ?
@@ -69,7 +69,7 @@ export default function Partners() {
                 <FiHome />
               </div>
               <h3 className="text-xl font-bold text-[var(--kh-primary)]">
-                Devenir partenaire
+                Accéder à l’espace propriétaire
               </h3>
             </div>
             <p className="text-[var(--kh-text-muted)] mb-6">

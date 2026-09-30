@@ -105,12 +105,12 @@ export default function OwnerAuthModal() {
             <div className="px-5 py-8 sm:px-10 sm:py-10">
               <BrandLogo className="h-12 w-auto mx-auto mb-5" />
               <h2 className="text-2xl font-extrabold text-center text-[var(--kh-primary)]">
-                {isRegister ? "Devenir partenaire" : "Espace propriétaire"}
+                {isRegister ? "Créer mon espace propriétaire" : "Espace propriétaire"}
               </h2>
               <p className="mt-2 text-center text-sm text-[var(--kh-text-muted)]">
                 {isRegister
-                  ? "S’inscrire avec Gmail. Si le compte existe déjà, vous serez connecté."
-                  : "Se connecter avec Gmail. Pas encore de compte ? Il sera créé automatiquement."}
+                  ? "Inscription Gmail — un seul tap sur mobile. Si le compte existe déjà, vous serez connecté."
+                  : "Connexion Gmail — un seul tap sur mobile. Pas encore de compte ? Il sera créé automatiquement."}
               </p>
               <div className="mt-7 space-y-4">
                 <GoogleButton
@@ -123,6 +123,11 @@ export default function OwnerAuthModal() {
                   onCredential={onCredential}
                   disabled={busy}
                 />
+                {busy ? (
+                  <p className="text-center text-sm text-[var(--kh-text-muted)]">
+                    Connexion en cours…
+                  </p>
+                ) : null}
                 {error ? (
                   <p className="text-sm text-red-500 text-center" role="alert">
                     {error}

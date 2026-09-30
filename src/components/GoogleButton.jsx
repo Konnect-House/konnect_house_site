@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
@@ -25,80 +25,166 @@ function GoogleMark() {
   );
 }
 
+function loadGsiScript() {
+  if (window.google?.accounts?.id) return Promise.resolve();
+  const existing = document.querySelector("script[data-kh-gsi]");
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      if (window.google?.accounts?.id) {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", reject, { once: true });
+    });
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.dataset.khGsi = "1";
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+/**
+ * Bouton Google fiable sur mobile :
+ * - callback stable (pas de re-render GIS au milieu d’un tap)
+ * - iframe GIS cliquable (opacity > 0 pour iOS Safari)
+ * - largeur recalculée quand le modal s’ouvre
+ */
 export default function GoogleButton({
   onCredential,
   disabled,
   label = "Continuer avec Google",
 }) {
-  const gis = useRef(null);
+  const hostRef = useRef(null);
+  const gisRef = useRef(null);
+  const onCredentialRef = useRef(onCredential);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  onCredentialRef.current = onCredential;
 
   useEffect(() => {
-    if (!CLIENT_ID || !gis.current) return;
+    if (!CLIENT_ID) return undefined;
     let cancelled = false;
+    let resizeObs;
 
-    const render = () => {
-      if (cancelled || !window.google?.accounts?.id || !gis.current) return;
-      gis.current.innerHTML = "";
+    const paint = () => {
+      if (cancelled || !gisRef.current || !hostRef.current) return;
+      if (!window.google?.accounts?.id) return;
+
+      const width = Math.max(
+        Math.floor(hostRef.current.getBoundingClientRect().width),
+        280,
+      );
+      if (width < 200) {
+        // Modal pas encore mesuré — réessayer au frame suivant
+        requestAnimationFrame(paint);
+        return;
+      }
+
+      gisRef.current.innerHTML = "";
       window.google.accounts.id.initialize({
         client_id: CLIENT_ID,
         callback: (res) => {
-          if (res.credential) onCredential(res.credential);
+          if (res?.credential) onCredentialRef.current?.(res.credential);
         },
         ux_mode: "popup",
         auto_select: false,
+        itp_support: true,
+        use_fedcm_for_prompt: true,
       });
-      window.google.accounts.id.renderButton(gis.current, {
+      window.google.accounts.id.renderButton(gisRef.current, {
         type: "standard",
         theme: "outline",
         size: "large",
-        width: Math.max(gis.current.parentElement?.offsetWidth || 320, 240),
+        shape: "pill",
+        text: "continue_with",
+        width,
         locale: "fr",
       });
+
+      // Étire l’iframe GIS sur toute la zone tactile (mobile)
+      const iframe = gisRef.current.querySelector("iframe");
+      const btn = gisRef.current.querySelector("div[role='button']");
+      const target = iframe || btn;
+      if (target) {
+        target.style.position = "absolute";
+        target.style.inset = "0";
+        target.style.width = "100%";
+        target.style.height = "100%";
+        target.style.maxWidth = "none";
+        target.style.opacity = "0.02";
+        target.style.cursor = "pointer";
+      }
+      setReady(true);
     };
 
-    if (window.google?.accounts?.id) {
-      render();
-    } else {
-      const existing = document.querySelector("script[data-kh-gsi]");
-      if (existing) {
-        existing.addEventListener("load", render);
-      } else {
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-        script.dataset.khGsi = "1";
-        script.onload = render;
-        document.head.appendChild(script);
-      }
-    }
+    loadGsiScript()
+      .then(() => {
+        if (cancelled) return;
+        paint();
+        if (hostRef.current && typeof ResizeObserver !== "undefined") {
+          resizeObs = new ResizeObserver(() => paint());
+          resizeObs.observe(hostRef.current);
+        }
+        window.addEventListener("resize", paint);
+        window.addEventListener("orientationchange", paint);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
 
     return () => {
       cancelled = true;
+      resizeObs?.disconnect();
+      window.removeEventListener("resize", paint);
+      window.removeEventListener("orientationchange", paint);
     };
-  }, [onCredential, label]);
+  }, []);
 
   if (!CLIENT_ID) {
     return (
       <p className="text-sm text-[var(--kh-text-muted)] text-center">
         Connexion Gmail bientôt disponible. Ajoutez{" "}
-        <code className="font-semibold">VITE_GOOGLE_CLIENT_ID</code> sur Vercel
-        et <code className="font-semibold">GOOGLE_CLIENT_ID</code> sur Render.
+        <code className="font-semibold">VITE_GOOGLE_CLIENT_ID</code> sur Vercel.
+      </p>
+    );
+  }
+
+  if (failed) {
+    return (
+      <p className="text-sm text-red-500 text-center" role="alert">
+        Impossible de charger Google. Vérifiez votre connexion et réessayez.
       </p>
     );
   }
 
   return (
     <div
-      className={`relative w-full ${disabled ? "pointer-events-none opacity-60" : ""}`}
+      ref={hostRef}
+      className={`relative w-full min-h-12 ${disabled ? "pointer-events-none opacity-60" : ""}`}
     >
-      <div className="w-full flex items-center justify-center gap-3 px-5 py-3 rounded-full bg-white text-[#1f1f1f] font-semibold border border-[#dadce0] pointer-events-none">
-        <GoogleMark />
-        {label}
-      </div>
       <div
-        ref={gis}
-        className="absolute inset-0 overflow-hidden opacity-0 [&>div]:w-full [&>div]:h-full"
+        className="w-full min-h-12 flex items-center justify-center gap-3 px-5 py-3.5 rounded-full bg-white text-[#1f1f1f] font-semibold border border-[#dadce0] shadow-sm pointer-events-none select-none"
+        aria-hidden
+      >
+        <GoogleMark />
+        <span>{ready ? label : "Chargement Google…"}</span>
+      </div>
+      {/*
+        opacity 0.02 (pas 0) : iOS Safari ignore souvent les taps sur opacity:0.
+        inset-0 + iframe étiré = une seule grosse zone tactile.
+      */}
+      <div
+        ref={gisRef}
+        className="absolute inset-0 z-10 overflow-hidden rounded-full"
+        style={{ WebkitTapHighlightColor: "transparent" }}
       />
     </div>
   );

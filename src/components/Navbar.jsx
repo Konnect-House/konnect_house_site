@@ -10,9 +10,9 @@ import BrandLogo from "./BrandLogo";
 import { whatsappBotLink } from "../lib/whatsapp";
 
 const navLinks = [
+  { label: "Espace propriétaire", href: "#partners" },
   { label: "Comment ça marche", href: "#how" },
   { label: "Logements", href: "#listings" },
-  { label: "Propriétaires", href: "#partners" },
   { label: "Avis", href: "#testimonials" },
 ];
 
@@ -95,7 +95,7 @@ export default function Navbar() {
           {ownerLoggedIn ? (
             <Link
               to="/proprietaire"
-              className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)] transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[var(--kh-primary)] border-2 border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10 hover:bg-[var(--kh-blue-2)]/20 transition"
             >
               Espace propriétaire
             </Link>
@@ -103,7 +103,7 @@ export default function Navbar() {
             <button
               type="button"
               onClick={openLogin}
-              className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-primary)] transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-[var(--kh-primary)] border-2 border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10 hover:bg-[var(--kh-blue-2)]/20 transition"
             >
               Espace propriétaire
             </button>
@@ -139,6 +139,31 @@ export default function Navbar() {
           >
             <div className="h-full overflow-y-auto pt-24 px-4 sm:px-6 pb-[max(2.5rem,env(safe-area-inset-bottom))]">
               <ul className="flex flex-col gap-1 max-w-md mx-auto">
+                <li className="mb-2">
+                  {ownerLoggedIn ? (
+                    <Link
+                      to="/proprietaire"
+                      onClick={() => setMenuOpen(false)}
+                      className="block text-center px-4 py-4 rounded-xl text-white font-extrabold kh-gradient-btn kh-glow text-lg"
+                    >
+                      Espace propriétaire
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        openLogin();
+                      }}
+                      className="w-full text-center px-4 py-4 rounded-xl text-white font-extrabold kh-gradient-btn kh-glow text-lg"
+                    >
+                      Espace propriétaire
+                    </button>
+                  )}
+                  <p className="mt-1.5 text-center text-xs text-[var(--kh-text-muted)]">
+                    Publier et gérer vos logements
+                  </p>
+                </li>
                 {navLinks.map((link) => (
                   <li key={link.href}>
                     <button
@@ -150,33 +175,11 @@ export default function Navbar() {
                   </li>
                 ))}
                 <li className="mt-4">
-                  {ownerLoggedIn ? (
-                    <Link
-                      to="/proprietaire"
-                      onClick={() => setMenuOpen(false)}
-                      className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
-                    >
-                      Espace propriétaire
-                    </Link>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        openLogin();
-                      }}
-                      className="w-full text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
-                    >
-                      Espace propriétaire
-                    </button>
-                  )}
-                </li>
-                <li className="mt-2">
                   <a
                     href={whatsappBotLink()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block text-center px-4 py-3 rounded-xl text-white font-bold kh-gradient-btn"
+                    className="block text-center px-4 py-3 rounded-xl text-[var(--kh-primary)] font-bold border border-[var(--kh-border)] bg-[var(--kh-bg-soft)]"
                   >
                     <FaWhatsapp className="inline mr-2 text-base" />
                     Démarrer sur WhatsApp

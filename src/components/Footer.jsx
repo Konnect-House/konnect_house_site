@@ -51,11 +51,11 @@ export default function Footer() {
           </div>
 
           {/* Liens */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-[var(--kh-text-muted)]">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-[var(--kh-text-muted)]">
             {ownerLoggedIn ? (
               <Link
                 to="/proprietaire"
-                className="hover:text-[var(--kh-primary)] transition"
+                className="inline-flex items-center rounded-full border-2 border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10 px-4 py-2 font-bold text-[var(--kh-primary)]"
               >
                 Espace propriétaire
               </Link>
@@ -63,7 +63,7 @@ export default function Footer() {
               <button
                 type="button"
                 onClick={openLogin}
-                className="hover:text-[var(--kh-primary)] transition"
+                className="inline-flex items-center rounded-full border-2 border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10 px-4 py-2 font-bold text-[var(--kh-primary)]"
               >
                 Espace propriétaire
               </button>

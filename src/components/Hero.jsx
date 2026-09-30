@@ -1,6 +1,9 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
-import { FiArrowRight } from "react-icons/fi";
+import { FiArrowRight, FiHome } from "react-icons/fi";
+import { useAuth } from "../lib/auth";
+import { useAuthModal } from "../lib/authModal";
 import { whatsappBotLink } from "../lib/whatsapp";
 
 const container = {
@@ -22,6 +25,10 @@ const item = {
 const whatsappLink = whatsappBotLink();
 
 export default function Hero() {
+  const { user } = useAuth();
+  const { openLogin } = useAuthModal();
+  const ownerLoggedIn = user?.role === "PROVIDER" || user?.role === "ADMIN";
+
   return (
     <section
       id="top"
@@ -88,16 +95,24 @@ export default function Hero() {
               Démarrer sur WhatsApp
               <FiArrowRight className="text-lg transition-transform group-hover:translate-x-1" />
             </a>
-            <button
-              onClick={() =>
-                document
-                  .querySelector("#how")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 sm:py-4 rounded-full text-base font-bold text-[var(--kh-primary)] kh-glass hover:bg-[var(--kh-surface)] transition border border-[var(--kh-border)] shadow-sm min-h-12"
-            >
-              Voir comment ça marche
-            </button>
+            {ownerLoggedIn ? (
+              <Link
+                to="/proprietaire"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 sm:py-4 rounded-full text-base font-bold text-[var(--kh-primary)] kh-glass hover:bg-[var(--kh-surface)] transition border-2 border-[var(--kh-blue-2)] shadow-sm min-h-12"
+              >
+                <FiHome className="text-lg" />
+                Espace propriétaire
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={openLogin}
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 sm:py-4 rounded-full text-base font-bold text-[var(--kh-primary)] kh-glass hover:bg-[var(--kh-surface)] transition border-2 border-[var(--kh-blue-2)] shadow-sm min-h-12"
+              >
+                <FiHome className="text-lg" />
+                Espace propriétaire
+              </button>
+            )}
           </motion.div>
 
           <motion.div
@@ -121,21 +136,6 @@ export default function Hero() {
           </motion.div>
         </motion.div>
       </div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
-        className="hidden sm:block absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-      >
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="w-6 h-10 rounded-full border-2 border-[var(--kh-border)] flex items-start justify-center p-1.5"
-        >
-          <div className="w-1 h-2 rounded-full bg-[var(--kh-blue-2)]" />
-        </motion.div>
-      </motion.div>
     </section>
   );
 }
