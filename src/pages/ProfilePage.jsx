@@ -1,186 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { api, uploadFile } from "../lib/api";
+import ProviderProfileForm from "../components/ProviderProfileForm";
 import { useAuth } from "../lib/auth";
-import { ID_DOCUMENT_TYPES, isHttpUrl, KYC_LABELS } from "../lib/media";
-import {
-  PAYMENT_METHODS,
-  normalizePaymentMethods,
-} from "../lib/payments";
-import { isValidWhatsAppPhone } from "../lib/phone";
-
-const fieldClass =
-  "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
-
-const FALLBACK_CATEGORIES = [
-  { id: "MAISON_DE_PASSAGE", label: "Maison de passage" },
-  { id: "GUEST_HOUSE", label: "Guest house" },
-  { id: "APPARTEMENT", label: "Appartement" },
-  { id: "HOTEL", label: "Hôtel" },
-  { id: "SALON_PRIVE", label: "Salon privé" },
-];
-
-const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-
-function toDateInput(value) {
-  if (!value) return "";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
-}
-
-function emptyForm(user) {
-  const p = user?.providerProfile;
-  return {
-    fullName: user?.fullName || "",
-    phone: user?.phone || user?.whatsappNumber || "",
-    avatarUrl: p?.avatarUrl || "",
-    dateOfBirth: toDateInput(p?.dateOfBirth),
-    profession: p?.profession || "",
-    homeAddress: p?.homeAddress || "",
-    homeCommune: p?.homeCommune || "",
-    homeCity: p?.homeCity || "",
-    propertyCount: p?.propertyCount != null ? String(p.propertyCount) : "1",
-    propertyTypes: p?.propertyTypes?.length ? [...p.propertyTypes] : [],
-    idDocumentType: p?.idDocumentType || "NATIONAL_ID",
-    idDocumentUrl: p?.idDocumentUrl || "",
-    mobileMoneyNumber: p?.mobileMoneyNumber || "",
-    bankAccount: p?.bankAccount || "",
-    acceptedPaymentMethods: normalizePaymentMethods(
-      p?.acceptedPaymentMethods?.length
-        ? p.acceptedPaymentMethods
-        : ["MOBILE_MONEY"],
-    ),
-  };
-}
+import { KYC_LABELS } from "../lib/media";
 
 export default function ProfilePage() {
-  const { user, token, updateProfile } = useAuth();
-  const [form, setForm] = useState(() => emptyForm(user));
-  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const { user, updateProfile } = useAuth();
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(null);
-
-  useEffect(() => {
-    if (user) setForm(emptyForm(user));
-  }, [user]);
-
-  useEffect(() => {
-    api("/catalog")
-      .then((data) => {
-        if (data.propertyCategories?.length) setCategories(data.propertyCategories);
-      })
-      .catch(() => {});
-  }, []);
-
-  const avatarOk = useMemo(() => isHttpUrl(form.avatarUrl), [form.avatarUrl]);
-  const docOk = useMemo(() => isHttpUrl(form.idDocumentUrl), [form.idDocumentUrl]);
 
   if (!user) return <Navigate to="/" replace />;
 
-  function setField(name, value) {
-    setForm((f) => ({ ...f, [name]: value }));
-  }
-
-  function toggleMethod(id) {
-    setForm((f) => {
-      const has = f.acceptedPaymentMethods.includes(id);
-      return {
-        ...f,
-        acceptedPaymentMethods: has
-          ? f.acceptedPaymentMethods.filter((m) => m !== id)
-          : [...f.acceptedPaymentMethods, id],
-      };
-    });
-  }
-
-  function toggleType(id) {
-    setForm((f) => {
-      const has = f.propertyTypes.includes(id);
-      return {
-        ...f,
-        propertyTypes: has
-          ? f.propertyTypes.filter((t) => t !== id)
-          : [...f.propertyTypes, id],
-      };
-    });
-  }
-
-  async function onUpload(field, file) {
-    if (!file || !token) return;
-    if (file.size > MAX_UPLOAD_BYTES) {
-      setError("Fichier trop volumineux (max 20 Mo).");
-      return;
-    }
-    const kind = field === "avatarUrl" ? "avatar" : "id-document";
-    setUploading(field);
-    setError("");
-    setOk("");
-    try {
-      const res = await uploadFile("/uploads/provider", {
-        token,
-        file,
-        fields: { kind },
-      });
-      setField(field, res.url);
-    } catch (err) {
-      setError(err.message || "Upload impossible.");
-    } finally {
-      setUploading(null);
-    }
-  }
-
-  async function onSubmit(e) {
-    e.preventDefault();
+  async function onSubmit(payload) {
     setOk("");
     setError("");
-    if (!isValidWhatsAppPhone(form.phone)) {
-      setError("Numéro WhatsApp obligatoire (ex. +243 8XX XXX XXX).");
-      return;
-    }
-    if (!avatarOk) {
-      setError("Uploadez une photo de profil.");
-      return;
-    }
-    if (!docOk) {
-      setError("Uploadez votre pièce d’identité.");
-      return;
-    }
-    if (!form.acceptedPaymentMethods.length) {
-      setError("Cochez au moins un mode de paiement accepté.");
-      return;
-    }
-    const usesMm = form.acceptedPaymentMethods.includes("MOBILE_MONEY");
-    if (usesMm && !form.mobileMoneyNumber.trim()) {
-      setError("Indiquez le numéro Mobile Money.");
-      return;
-    }
-    const usesBank = form.acceptedPaymentMethods.includes("BANK");
-    if (usesBank && !form.bankAccount.trim()) {
-      setError("Indiquez le compte bancaire.");
-      return;
-    }
     setBusy(true);
     try {
-      await updateProfile({
-        fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
-        avatarUrl: form.avatarUrl.trim(),
-        dateOfBirth: form.dateOfBirth,
-        profession: form.profession.trim(),
-        homeAddress: form.homeAddress.trim(),
-        homeCommune: form.homeCommune.trim(),
-        homeCity: form.homeCity.trim() || "Kinshasa",
-        propertyCount: Number(form.propertyCount),
-        propertyTypes: form.propertyTypes,
-        idDocumentType: form.idDocumentType,
-        idDocumentUrl: form.idDocumentUrl.trim(),
-        mobileMoneyNumber: form.mobileMoneyNumber.trim() || undefined,
-        bankAccount: form.bankAccount.trim() || undefined,
-        acceptedPaymentMethods: form.acceptedPaymentMethods,
-      });
+      await updateProfile(payload);
       setOk(
         "Profil enregistré. Si vous avez changé la pièce d’identité, le KYC repasse en revue.",
       );
@@ -202,177 +39,23 @@ export default function ProfilePage() {
         Mes informations
       </h1>
       <p className="mt-2 text-[var(--kh-text-muted)]">
-        Modifiez votre identité, vos moyens de paiement et votre pièce KYC.
+        Mettez à jour votre profil en 4 étapes courtes.
       </p>
       <p className="mt-3 text-sm font-semibold text-[var(--kh-primary)]">
         Statut : {KYC_LABELS[kyc] || kyc || "—"} · compte {user.status}
       </p>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <div className="flex items-center gap-4">
-          <div className="h-20 w-20 overflow-hidden rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg)]">
-            {avatarOk ? (
-              <img src={form.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : null}
-          </div>
-          <div className="flex-1 space-y-2">
-            <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)]">
-              {uploading === "avatarUrl" ? "Upload…" : "Changer la photo"}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                disabled={Boolean(uploading)}
-                onChange={(e) =>
-                  e.target.files?.[0] && onUpload("avatarUrl", e.target.files[0])
-                }
-              />
-            </label>
-          </div>
-        </div>
-
-        <input required minLength={2} placeholder="Nom complet" value={form.fullName} onChange={(e) => setField("fullName", e.target.value)} className={fieldClass} />
-        <label className="block space-y-1.5">
-          <span className="text-sm font-semibold text-[var(--kh-primary)]">
-            Numéro WhatsApp <span className="text-red-500">*</span>
-          </span>
-          <input
-            type="tel"
-            required
-            minLength={9}
-            placeholder="+243 8XX XXX XXX"
-            value={form.phone}
-            onChange={(e) => setField("phone", e.target.value)}
-            className={fieldClass}
-          />
-        </label>
-        <input type="date" required value={form.dateOfBirth} onChange={(e) => setField("dateOfBirth", e.target.value)} className={fieldClass} />
-        <input required placeholder="Profession" value={form.profession} onChange={(e) => setField("profession", e.target.value)} className={fieldClass} />
-        <input required placeholder="Adresse" value={form.homeAddress} onChange={(e) => setField("homeAddress", e.target.value)} className={fieldClass} />
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            required
-            minLength={2}
-            value={form.homeCity}
-            onChange={(e) => setField("homeCity", e.target.value)}
-            className={fieldClass}
-            placeholder="Ville (toute la RDC)"
-          />
-          <input
-            required
-            minLength={2}
-            value={form.homeCommune}
-            onChange={(e) => setField("homeCommune", e.target.value)}
-            className={fieldClass}
-            placeholder="Commune / arrond. / quartier"
-          />
-        </div>
-
-        <input type="number" min={1} value={form.propertyCount} onChange={(e) => setField("propertyCount", e.target.value)} className={fieldClass} />
-        <div className="grid gap-2">
-          {categories.map((c) => (
-            <label key={c.id} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.propertyTypes.includes(c.id)} onChange={() => toggleType(c.id)} />
-              {c.label}
-            </label>
-          ))}
-        </div>
-
-        <fieldset className="rounded-2xl border border-[var(--kh-border)] p-4 space-y-3">
-          <legend className="px-1 text-sm font-bold text-[var(--kh-primary)]">
-            Pièce d’identité (KYC)
-          </legend>
-          <select
-            value={form.idDocumentType}
-            onChange={(e) => setField("idDocumentType", e.target.value)}
-            className={fieldClass}
-          >
-            {ID_DOCUMENT_TYPES.map((t) => (
-              <option key={t.id} value={t.id}>{t.label}</option>
-            ))}
-          </select>
-          <label className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm font-bold text-[var(--kh-primary)]">
-            {uploading === "idDocumentUrl" ? "Upload…" : "Uploader la pièce"}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              className="hidden"
-              disabled={Boolean(uploading)}
-              onChange={(e) =>
-                e.target.files?.[0] && onUpload("idDocumentUrl", e.target.files[0])
-              }
-            />
-          </label>
-          {docOk && !form.idDocumentUrl.toLowerCase().includes(".pdf") ? (
-            <img src={form.idDocumentUrl} alt="Pièce" className="max-h-40 rounded-xl border border-[var(--kh-border)]" />
-          ) : null}
-          {docOk ? (
-            <p className="text-xs text-emerald-600">Document prêt.</p>
-          ) : (
-            <p className="text-xs text-[var(--kh-text-muted)]">Image ou PDF · max 20 Mo.</p>
-          )}
-        </fieldset>
-
-        <fieldset className="rounded-2xl border border-[var(--kh-border)] p-4 space-y-3">
-          <legend className="px-1 text-sm font-bold text-[var(--kh-primary)]">
-            Modes de paiement acceptés
-          </legend>
-          <p className="text-xs text-[var(--kh-text-muted)]">
-            Comment vous acceptez d’être payé par les clients et par Konnect
-            House.
-          </p>
-          <div className="grid gap-2">
-            {PAYMENT_METHODS.map((m) => (
-              <label
-                key={m.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition ${
-                  form.acceptedPaymentMethods.includes(m.id)
-                    ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10"
-                    : "border-[var(--kh-border)]"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="mt-0.5"
-                  checked={form.acceptedPaymentMethods.includes(m.id)}
-                  onChange={() => toggleMethod(m.id)}
-                />
-                <span>
-                  <span className="block font-semibold text-[var(--kh-primary)]">
-                    {m.label}
-                  </span>
-                  <span className="block text-xs text-[var(--kh-text-muted)]">
-                    {m.hint}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-          {form.acceptedPaymentMethods.includes("MOBILE_MONEY") ? (
-            <input
-              placeholder="Numéro Mobile Money"
-              value={form.mobileMoneyNumber}
-              onChange={(e) => setField("mobileMoneyNumber", e.target.value)}
-              className={fieldClass}
-            />
-          ) : null}
-          {form.acceptedPaymentMethods.includes("BANK") ? (
-            <input
-              placeholder="Compte bancaire"
-              value={form.bankAccount}
-              onChange={(e) => setField("bankAccount", e.target.value)}
-              className={fieldClass}
-            />
-          ) : null}
-        </fieldset>
-
-        {error ? <p className="text-sm text-red-500" role="alert">{error}</p> : null}
-        {ok ? <p className="text-sm text-emerald-600">{ok}</p> : null}
-
-        <button type="submit" disabled={busy || Boolean(uploading)} className="w-full kh-gradient-btn rounded-xl px-6 py-3 font-bold text-white disabled:opacity-60">
-          {busy ? "Enregistrement…" : "Enregistrer le profil"}
-        </button>
-      </form>
+      <div className="mt-8">
+        <ProviderProfileForm
+          mode="profile"
+          initialUser={user}
+          submitLabel="Enregistrer le profil"
+          busy={busy}
+          error={error}
+          success={ok}
+          onSubmit={onSubmit}
+        />
+      </div>
     </main>
   );
 }
