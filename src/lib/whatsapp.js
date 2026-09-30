@@ -1,9 +1,5 @@
 /** Numéro WhatsApp Business du bot (indicatif sans +). */
-const BOT_PHONE =
-  (import.meta.env.VITE_WHATSAPP_BOT_PHONE || "243803322831").replace(
-    /\D/g,
-    "",
-  );
+const BOT_PHONE = "243803322831";
 
 /** Message prérempli — ouverture neutre (le bot propose ensuite les choix). */
 export const WHATSAPP_OPENER = "Bonjour konnecthouse";
