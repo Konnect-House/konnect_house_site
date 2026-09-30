@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
-import { api } from "../lib/api";
+import { useEffect, useRef, useState } from "react";
+import { api, uploadFile } from "../lib/api";
+import { useAuth } from "../lib/auth";
 
 const fieldClass =
   "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
 
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+const MAX_PHOTOS = 20;
+const MIN_PHOTOS = 5;
+
 const FALLBACK = {
-  communes: ["Gombe", "Kintambo", "Ngaliema", "Limete"],
   amenities: [
     { id: "wifi", label: "Wi-Fi" },
     { id: "parking", label: "Parking" },
@@ -26,18 +30,17 @@ const FALLBACK = {
 };
 
 function emptyForm(initial) {
-  const photos = initial?.photos?.length
-    ? [...initial.photos]
-    : ["", "", "", "", ""];
-  while (photos.length < 5) photos.push("");
+  const photos = initial?.photos?.length ? [...initial.photos] : [];
   return {
     name: initial?.name || "",
     description: initial?.description || "",
     rooms: String(initial?.rooms ?? "1"),
     capacity: String(initial?.capacity ?? "2"),
-    pricePerNight: initial?.pricePerNight != null ? String(initial.pricePerNight) : "",
+    pricePerNight:
+      initial?.pricePerNight != null ? String(initial.pricePerNight) : "",
     address: initial?.address || "",
-    commune: initial?.commune || "Gombe",
+    city: initial?.city || "",
+    commune: initial?.commune || "",
     neighborhood: initial?.neighborhood || "",
     conditions: initial?.conditions || "",
     gpsLat: initial?.gpsLat != null ? String(initial.gpsLat) : "",
@@ -55,8 +58,12 @@ export default function PropertyForm({
   error,
   onSubmit,
 }) {
+  const { token } = useAuth();
+  const fileRef = useRef(null);
   const [catalog, setCatalog] = useState(FALLBACK);
   const [form, setForm] = useState(() => emptyForm(initial));
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     setForm(emptyForm(initial));
@@ -66,8 +73,9 @@ export default function PropertyForm({
     api("/catalog")
       .then((data) => {
         setCatalog({
-          communes: data.communes?.length ? data.communes : FALLBACK.communes,
-          amenities: data.amenities?.length ? data.amenities : FALLBACK.amenities,
+          amenities: data.amenities?.length
+            ? data.amenities
+            : FALLBACK.amenities,
           accessPreferences: data.accessPreferences?.length
             ? data.accessPreferences
             : FALLBACK.accessPreferences,
@@ -80,47 +88,57 @@ export default function PropertyForm({
     setForm((f) => ({ ...f, [name]: value }));
   }
 
-  function setPhoto(i, value) {
-    setForm((f) => {
-      const photos = [...f.photos];
-      photos[i] = value;
-      return { ...f, photos };
-    });
+  function removePhoto(i) {
+    setForm((f) => ({
+      ...f,
+      photos: f.photos.filter((_, idx) => idx !== i),
+    }));
   }
 
-  function addPhotoField() {
-    setForm((f) => ({ ...f, photos: [...f.photos, ""] }));
-  }
-
-  function toggleAmenity(id) {
-    setForm((f) => {
-      const has = f.amenities.includes(id);
-      return {
-        ...f,
-        amenities: has
-          ? f.amenities.filter((a) => a !== id)
-          : [...f.amenities, id],
-      };
-    });
-  }
-
-  function toggleAccessTag(id) {
-    setForm((f) => {
-      const has = f.accessTags.includes(id);
-      return {
-        ...f,
-        accessTags: has
-          ? f.accessTags.filter((a) => a !== id)
-          : [...f.accessTags, id],
-      };
-    });
+  async function onPickFiles(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    if (!token) {
+      setUploadError("Connectez-vous pour envoyer des photos.");
+      return;
+    }
+    setUploadError("");
+    setUploading(true);
+    try {
+      const next = [...form.photos];
+      for (const file of files) {
+        if (next.length >= MAX_PHOTOS) break;
+        if (!file.type.startsWith("image/")) {
+          throw new Error("Formats acceptés : JPG, PNG, WebP, GIF.");
+        }
+        if (file.size > MAX_PHOTO_BYTES) {
+          throw new Error(`« ${file.name} » dépasse 20 Mo.`);
+        }
+        const res = await uploadFile("/uploads/provider", {
+          token,
+          file,
+          fields: { kind: "property-photo" },
+        });
+        if (res?.url) next.push(res.url);
+      }
+      setForm((f) => ({ ...f, photos: next }));
+    } catch (err) {
+      setUploadError(err.message || "Échec de l’upload.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     const photos = form.photos.map((p) => p.trim()).filter(Boolean);
-    if (photos.length < 5) {
-      onSubmit(null, "Ajoutez au moins 5 URLs de photos.");
+    if (photos.length < MIN_PHOTOS) {
+      onSubmit(null, `Ajoutez au moins ${MIN_PHOTOS} photos du logement.`);
+      return;
+    }
+    if (!form.city.trim() || !form.commune.trim()) {
+      onSubmit(null, "Indiquez la ville et la commune / arrondissement.");
       return;
     }
     onSubmit({
@@ -130,8 +148,9 @@ export default function PropertyForm({
       capacity: Number(form.capacity),
       pricePerNight: Number(form.pricePerNight),
       address: form.address,
-      commune: form.commune,
-      neighborhood: form.neighborhood || undefined,
+      city: form.city.trim(),
+      commune: form.commune.trim(),
+      neighborhood: form.neighborhood.trim() || undefined,
       conditions: form.conditions || undefined,
       amenities: form.amenities,
       accessTags: form.accessTags,
@@ -145,7 +164,7 @@ export default function PropertyForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-sm text-[var(--kh-text-muted)]">
-        Type MVP : maison de passage uniquement.
+        Type MVP : maison de passage — toute la RDC (ville + commune libres).
       </p>
       <input
         required
@@ -201,18 +220,24 @@ export default function PropertyForm({
         onChange={(e) => setField("address", e.target.value)}
         className={fieldClass}
       />
-      <select
-        required
-        value={form.commune}
-        onChange={(e) => setField("commune", e.target.value)}
-        className={fieldClass}
-      >
-        {catalog.communes.map((c) => (
-          <option key={c} value={c}>
-            {c}
-          </option>
-        ))}
-      </select>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <input
+          required
+          minLength={2}
+          placeholder="Ville (ex. Kinshasa, Lubumbashi…)"
+          value={form.city}
+          onChange={(e) => setField("city", e.target.value)}
+          className={fieldClass}
+        />
+        <input
+          required
+          minLength={2}
+          placeholder="Commune / arrondissement"
+          value={form.commune}
+          onChange={(e) => setField("commune", e.target.value)}
+          className={fieldClass}
+        />
+      </div>
       <input
         placeholder="Quartier (optionnel)"
         value={form.neighborhood}
@@ -257,7 +282,14 @@ export default function PropertyForm({
               <input
                 type="checkbox"
                 checked={form.amenities.includes(a.id)}
-                onChange={() => toggleAmenity(a.id)}
+                onChange={() =>
+                  setForm((f) => ({
+                    ...f,
+                    amenities: f.amenities.includes(a.id)
+                      ? f.amenities.filter((x) => x !== a.id)
+                      : [...f.amenities, a.id],
+                  }))
+                }
               />
               {a.label}
             </label>
@@ -268,9 +300,6 @@ export default function PropertyForm({
         <legend className="text-sm font-semibold text-[var(--kh-primary)] mb-2">
           Accessibilité / emplacement
         </legend>
-        <p className="text-xs text-[var(--kh-text-muted)] mb-2">
-          Sert au matching du bot (macadam, accès voiture, etc.).
-        </p>
         <div className="grid sm:grid-cols-2 gap-2">
           {catalog.accessPreferences.map((a) => (
             <label
@@ -280,35 +309,77 @@ export default function PropertyForm({
               <input
                 type="checkbox"
                 checked={form.accessTags.includes(a.id)}
-                onChange={() => toggleAccessTag(a.id)}
+                onChange={() =>
+                  setForm((f) => ({
+                    ...f,
+                    accessTags: f.accessTags.includes(a.id)
+                      ? f.accessTags.filter((x) => x !== a.id)
+                      : [...f.accessTags, a.id],
+                  }))
+                }
               />
               {a.label}
             </label>
           ))}
         </div>
       </fieldset>
-      <fieldset className="space-y-2">
+      <fieldset className="space-y-3">
         <legend className="text-sm font-semibold text-[var(--kh-primary)] mb-2">
-          Photos (5 URLs minimum)
+          Photos du logement ({MIN_PHOTOS} min. — {MAX_PHOTOS} max., 20 Mo / image)
         </legend>
-        {form.photos.map((url, i) => (
-          <input
-            key={i}
-            type="url"
-            placeholder={`URL photo ${i + 1}`}
-            value={url}
-            onChange={(e) => setPhoto(i, e.target.value)}
-            className={fieldClass}
-            required={i < 5}
-          />
-        ))}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          className="hidden"
+          onChange={onPickFiles}
+        />
         <button
           type="button"
-          onClick={addPhotoField}
-          className="text-sm font-semibold text-[var(--kh-blue-2)]"
+          disabled={uploading || form.photos.length >= MAX_PHOTOS}
+          onClick={() => fileRef.current?.click()}
+          className="w-full px-4 py-3 rounded-xl border border-dashed border-[var(--kh-border)] text-sm font-semibold text-[var(--kh-blue-2)] disabled:opacity-50"
         >
-          + Ajouter une photo
+          {uploading
+            ? "Upload en cours…"
+            : form.photos.length >= MAX_PHOTOS
+              ? "Limite de photos atteinte"
+              : "Choisir des photos depuis l’appareil"}
         </button>
+        {uploadError ? (
+          <p className="text-sm text-red-500" role="alert">
+            {uploadError}
+          </p>
+        ) : null}
+        {form.photos.length ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {form.photos.map((url, i) => (
+              <div
+                key={`${url}-${i}`}
+                className="relative rounded-xl overflow-hidden border border-[var(--kh-border)] aspect-[4/3] bg-[var(--kh-bg)]"
+              >
+                <img
+                  src={url}
+                  alt={`Photo ${i + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  className="absolute top-2 right-2 text-xs font-bold bg-black/70 text-white px-2 py-1 rounded-lg"
+                >
+                  Retirer
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--kh-text-muted)]">
+            Aucune photo pour l’instant. Ajoutez au moins {MIN_PHOTOS} images
+            claires du logement.
+          </p>
+        )}
       </fieldset>
       {error ? (
         <p className="text-sm text-red-500" role="alert">
@@ -317,7 +388,7 @@ export default function PropertyForm({
       ) : null}
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || uploading}
         className="w-full kh-gradient-btn kh-glow px-6 py-3 rounded-xl font-bold text-white disabled:opacity-60"
       >
         {busy ? "Envoi…" : submitLabel}

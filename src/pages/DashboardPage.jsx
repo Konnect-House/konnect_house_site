@@ -190,7 +190,8 @@ export default function DashboardPage() {
                       {p.name}
                     </h2>
                     <p className="mt-1 text-sm text-[var(--kh-text-muted)]">
-                      {p.commune} · {p.rooms} ch. · {p.pricePerNight} USD / nuit
+                      {[p.city, p.commune].filter(Boolean).join(" · ")} · {p.rooms}{" "}
+                      ch. · {p.pricePerNight} USD / nuit
                     </p>
                     <p className="mt-2 text-xs text-[var(--kh-text-muted)]">
                       {p._count?.bookings ?? p.bookings?.length ?? 0} réservation(s)

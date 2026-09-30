@@ -46,49 +46,45 @@ async function forwardOne(url, headers, msg) {
     method: "POST",
     headers,
     body: JSON.stringify(msg),
+    signal: AbortSignal.timeout(8_000),
   });
   const raw = await res.text();
   return { status: res.status, raw };
+}
+
+async function deliverMessage(headers, msg) {
+  const endpoints = [
+    `${NEST_API_URL}/api/whatsapp/incoming`,
+    `${NEST_API_URL}/api/bot/preview`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const { status, raw } = await forwardOne(url, headers, msg);
+      console.log(
+        "[whatsapp webhook] nest forward",
+        url,
+        msg.phone,
+        status,
+        raw.slice(0, 160),
+      );
+      if (status >= 200 && status < 300) return true;
+    } catch (err) {
+      console.error("[whatsapp webhook] nest forward error:", url, err);
+    }
+  }
+  console.error(
+    "[whatsapp webhook] FAILED to deliver message to Nest",
+    msg.phone,
+  );
+  return false;
 }
 
 async function forwardToNest(messages) {
   if (!messages.length) return;
   const headers = { "Content-Type": "application/json" };
   if (BOT_SECRET) headers["x-bot-secret"] = BOT_SECRET;
-
-  // Prefer dedicated ingress; fall back to bot/preview (same CDC handler).
-  const endpoints = [
-    `${NEST_API_URL}/api/whatsapp/incoming`,
-    `${NEST_API_URL}/api/bot/preview`,
-  ];
-
-  for (const msg of messages) {
-    let delivered = false;
-    for (const url of endpoints) {
-      try {
-        const { status, raw } = await forwardOne(url, headers, msg);
-        console.log(
-          "[whatsapp webhook] nest forward",
-          url,
-          msg.phone,
-          status,
-          raw.slice(0, 160),
-        );
-        if (status >= 200 && status < 300) {
-          delivered = true;
-          break;
-        }
-      } catch (err) {
-        console.error("[whatsapp webhook] nest forward error:", url, err);
-      }
-    }
-    if (!delivered) {
-      console.error(
-        "[whatsapp webhook] FAILED to deliver message to Nest",
-        msg.phone,
-      );
-    }
-  }
+  // Parallèle : Nest ack immédiat puis traite (évite files d’attente Meta).
+  await Promise.all(messages.map((msg) => deliverMessage(headers, msg)));
 }
 
 export default async function handler(req, res) {

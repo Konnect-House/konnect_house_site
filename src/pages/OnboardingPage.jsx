@@ -19,7 +19,6 @@ const METHODS = [
 
 const MM = new Set(["MPESA", "AIRTEL_MONEY", "ORANGE_MONEY"]);
 
-const FALLBACK_COMMUNES = ["Gombe", "Kintambo", "Ngaliema", "Limete"];
 const FALLBACK_CATEGORIES = [
   {
     id: "MAISON_DE_PASSAGE",
@@ -96,8 +95,8 @@ function emptyForm(user) {
     dateOfBirth: toDateInput(p?.dateOfBirth),
     profession: p?.profession || "",
     homeAddress: p?.homeAddress || "",
-    homeCommune: p?.homeCommune || "Gombe",
-    homeCity: p?.homeCity || "Kinshasa",
+    homeCommune: p?.homeCommune || "",
+    homeCity: p?.homeCity || "",
     propertyCount: p?.propertyCount != null ? String(p.propertyCount) : "1",
     propertyTypes: p?.propertyTypes?.length ? [...p.propertyTypes] : [],
     idDocumentType: p?.idDocumentType || "NATIONAL_ID",
@@ -115,7 +114,6 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(() => emptyForm(user));
-  const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -153,7 +151,6 @@ export default function OnboardingPage() {
   useEffect(() => {
     api("/catalog")
       .then((data) => {
-        if (data.communes?.length) setCommunes(data.communes);
         if (data.propertyCategories?.length) setCategories(data.propertyCategories);
       })
       .catch(() => {});
@@ -176,6 +173,10 @@ export default function OnboardingPage() {
 
   async function onMediaFile(field, file) {
     if (!file || !token) return;
+    if (file.size > 20 * 1024 * 1024) {
+      setError("Fichier trop volumineux (max 20 Mo).");
+      return;
+    }
     const kind = field === "avatarUrl" ? "avatar" : "id-document";
     setUploading(field);
     setError("");
@@ -236,7 +237,12 @@ export default function OnboardingPage() {
       if (!form.homeAddress.trim() || form.homeAddress.trim().length < 5) {
         return "Indiquez où vous habitez.";
       }
-      if (!form.homeCommune.trim()) return "Choisissez votre commune.";
+      if (!form.homeCity.trim() || form.homeCity.trim().length < 2) {
+        return "Indiquez votre ville (ex. Kinshasa, Lubumbashi…).";
+      }
+      if (!form.homeCommune.trim() || form.homeCommune.trim().length < 2) {
+        return "Indiquez votre commune, arrondissement ou quartier.";
+      }
       return "";
     }
     if (index === 1) {
@@ -448,22 +454,21 @@ export default function OnboardingPage() {
                     className={fieldClass}
                   />
                   <div className="grid grid-cols-2 gap-2.5">
-                    <select
-                      value={form.homeCommune}
-                      onChange={(e) => setField("homeCommune", e.target.value)}
-                      className={fieldClass}
-                    >
-                      {communes.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
                     <input
+                      required
+                      minLength={2}
                       value={form.homeCity}
                       onChange={(e) => setField("homeCity", e.target.value)}
                       className={fieldClass}
-                      placeholder="Ville"
+                      placeholder="Ville (toute la RDC)"
+                    />
+                    <input
+                      required
+                      minLength={2}
+                      value={form.homeCommune}
+                      onChange={(e) => setField("homeCommune", e.target.value)}
+                      className={fieldClass}
+                      placeholder="Commune / arrond. / quartier"
                     />
                   </div>
                 </>
@@ -565,7 +570,7 @@ export default function OnboardingPage() {
                   <p className="text-xs text-[var(--kh-text-muted)]">
                     {docOk
                       ? "Document prêt pour validation admin."
-                      : "Image ou PDF · max 2,5 Mo."}
+                      : "Image ou PDF · max 20 Mo."}
                   </p>
                 </>
               ) : null}

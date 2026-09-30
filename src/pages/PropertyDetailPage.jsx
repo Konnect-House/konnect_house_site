@@ -94,7 +94,8 @@ export default function PropertyDetailPage() {
             {property.name}
           </h1>
           <p className="mt-2 text-[var(--kh-text-muted)]">
-            {property.commune} · {property.rooms} ch. · {property.capacity} pers. ·{" "}
+            {[property.city, property.commune].filter(Boolean).join(" · ")} ·{" "}
+            {property.rooms} ch. · {property.capacity} pers. ·{" "}
             {property.pricePerNight} USD / nuit
           </p>
           <p className="mt-1 text-sm text-[var(--kh-text-muted)]">{property.address}</p>

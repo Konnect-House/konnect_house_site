@@ -15,7 +15,6 @@ const METHODS = [
   { id: "CARD", label: "Carte" },
 ];
 const MM = new Set(["MPESA", "AIRTEL_MONEY", "ORANGE_MONEY"]);
-const FALLBACK_COMMUNES = ["Gombe", "Kintambo", "Ngaliema", "Limete"];
 const FALLBACK_CATEGORIES = [
   { id: "MAISON_DE_PASSAGE", label: "Maison de passage" },
   { id: "GUEST_HOUSE", label: "Guest house" },
@@ -23,6 +22,8 @@ const FALLBACK_CATEGORIES = [
   { id: "HOTEL", label: "Hôtel" },
   { id: "SALON_PRIVE", label: "Salon privé" },
 ];
+
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 function toDateInput(value) {
   if (!value) return "";
@@ -40,8 +41,8 @@ function emptyForm(user) {
     dateOfBirth: toDateInput(p?.dateOfBirth),
     profession: p?.profession || "",
     homeAddress: p?.homeAddress || "",
-    homeCommune: p?.homeCommune || "Gombe",
-    homeCity: p?.homeCity || "Kinshasa",
+    homeCommune: p?.homeCommune || "",
+    homeCity: p?.homeCity || "",
     propertyCount: p?.propertyCount != null ? String(p.propertyCount) : "1",
     propertyTypes: p?.propertyTypes?.length ? [...p.propertyTypes] : [],
     idDocumentType: p?.idDocumentType || "NATIONAL_ID",
@@ -57,7 +58,6 @@ function emptyForm(user) {
 export default function ProfilePage() {
   const { user, token, updateProfile } = useAuth();
   const [form, setForm] = useState(() => emptyForm(user));
-  const [communes, setCommunes] = useState(FALLBACK_COMMUNES);
   const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
@@ -71,7 +71,6 @@ export default function ProfilePage() {
   useEffect(() => {
     api("/catalog")
       .then((data) => {
-        if (data.communes?.length) setCommunes(data.communes);
         if (data.propertyCategories?.length) setCategories(data.propertyCategories);
       })
       .catch(() => {});
@@ -112,6 +111,10 @@ export default function ProfilePage() {
 
   async function onUpload(field, file) {
     if (!file || !token) return;
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setError("Fichier trop volumineux (max 20 Mo).");
+      return;
+    }
     const kind = field === "avatarUrl" ? "avatar" : "id-document";
     setUploading(field);
     setError("");
@@ -239,12 +242,22 @@ export default function ProfilePage() {
         <input required placeholder="Profession" value={form.profession} onChange={(e) => setField("profession", e.target.value)} className={fieldClass} />
         <input required placeholder="Adresse" value={form.homeAddress} onChange={(e) => setField("homeAddress", e.target.value)} className={fieldClass} />
         <div className="grid grid-cols-2 gap-3">
-          <select value={form.homeCommune} onChange={(e) => setField("homeCommune", e.target.value)} className={fieldClass}>
-            {communes.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <input value={form.homeCity} onChange={(e) => setField("homeCity", e.target.value)} className={fieldClass} placeholder="Ville" />
+          <input
+            required
+            minLength={2}
+            value={form.homeCity}
+            onChange={(e) => setField("homeCity", e.target.value)}
+            className={fieldClass}
+            placeholder="Ville (toute la RDC)"
+          />
+          <input
+            required
+            minLength={2}
+            value={form.homeCommune}
+            onChange={(e) => setField("homeCommune", e.target.value)}
+            className={fieldClass}
+            placeholder="Commune / arrond. / quartier"
+          />
         </div>
 
         <input type="number" min={1} value={form.propertyCount} onChange={(e) => setField("propertyCount", e.target.value)} className={fieldClass} />
@@ -288,7 +301,7 @@ export default function ProfilePage() {
           {docOk ? (
             <p className="text-xs text-emerald-600">Document prêt.</p>
           ) : (
-            <p className="text-xs text-[var(--kh-text-muted)]">Image ou PDF · max 2,5 Mo.</p>
+            <p className="text-xs text-[var(--kh-text-muted)]">Image ou PDF · max 20 Mo.</p>
           )}
         </fieldset>
 
