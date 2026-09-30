@@ -5,19 +5,14 @@ import { useAuth } from "../lib/auth";
 import { api, uploadFile } from "../lib/api";
 import { ID_DOCUMENT_TYPES, isHttpUrl } from "../lib/media";
 import BrandLogo from "../components/BrandLogo";
+import {
+  PAYMENT_METHODS,
+  normalizePaymentMethods,
+} from "../lib/payments";
 import { isValidWhatsAppPhone } from "../lib/phone";
 
 const fieldClass =
   "w-full px-3.5 py-2.5 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40 text-sm";
-
-const METHODS = [
-  { id: "MPESA", label: "M-Pesa" },
-  { id: "AIRTEL_MONEY", label: "Airtel Money" },
-  { id: "ORANGE_MONEY", label: "Orange Money" },
-  { id: "CARD", label: "Carte" },
-];
-
-const MM = new Set(["MPESA", "AIRTEL_MONEY", "ORANGE_MONEY"]);
 
 const FALLBACK_CATEGORIES = [
   {
@@ -50,7 +45,7 @@ const STEPS = [
   {
     id: "payouts",
     title: "Contact & reversements",
-    subtitle: "WhatsApp obligatoire et moyens de paiement.",
+    subtitle: "WhatsApp obligatoire et modes de paiement acceptés.",
   },
 ];
 
@@ -103,9 +98,11 @@ function emptyForm(user) {
     idDocumentUrl: p?.idDocumentUrl || "",
     mobileMoneyNumber: p?.mobileMoneyNumber || "",
     bankAccount: p?.bankAccount || "",
-    acceptedPaymentMethods: p?.acceptedPaymentMethods?.length
-      ? [...p.acceptedPaymentMethods]
-      : ["MPESA"],
+    acceptedPaymentMethods: normalizePaymentMethods(
+      p?.acceptedPaymentMethods?.length
+        ? p.acceptedPaymentMethods
+        : ["MOBILE_MONEY"],
+    ),
   };
 }
 
@@ -264,11 +261,15 @@ export default function OnboardingPage() {
       return "Numéro WhatsApp obligatoire (ex. +243 8XX XXX XXX).";
     }
     if (form.acceptedPaymentMethods.length < 1) {
-      return "Cochez au moins un moyen de paiement.";
+      return "Cochez au moins un mode de paiement accepté.";
     }
-    const usesMm = form.acceptedPaymentMethods.some((m) => MM.has(m));
+    const usesMm = form.acceptedPaymentMethods.includes("MOBILE_MONEY");
     if (usesMm && !form.mobileMoneyNumber.trim()) {
       return "Indiquez le numéro Mobile Money.";
+    }
+    const usesBank = form.acceptedPaymentMethods.includes("BANK");
+    if (usesBank && !form.bankAccount.trim()) {
+      return "Indiquez le compte bancaire.";
     }
     return "";
   }
@@ -598,15 +599,19 @@ export default function OnboardingPage() {
                   </label>
                   <fieldset>
                     <legend className="mb-2 text-sm font-semibold text-[var(--kh-primary)]">
-                      Moyens de paiement
+                      Modes de paiement acceptés
                     </legend>
-                    <div className="grid grid-cols-2 gap-2">
-                      {METHODS.map((m) => {
+                    <p className="mb-2 text-xs text-[var(--kh-text-muted)]">
+                      Comment vous acceptez d’être payé par les clients et par
+                      Konnect House.
+                    </p>
+                    <div className="grid gap-2">
+                      {PAYMENT_METHODS.map((m) => {
                         const on = form.acceptedPaymentMethods.includes(m.id);
                         return (
                           <label
                             key={m.id}
-                            className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
+                            className={`flex cursor-pointer items-start gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
                               on
                                 ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10"
                                 : "border-[var(--kh-border)] bg-[var(--kh-bg)]"
@@ -619,28 +624,37 @@ export default function OnboardingPage() {
                               onChange={() => toggleMethod(m.id)}
                             />
                             <CheckMark on={on} />
-                            <span className="font-semibold text-[var(--kh-primary)]">
-                              {m.label}
+                            <span>
+                              <span className="block font-semibold text-[var(--kh-primary)]">
+                                {m.label}
+                              </span>
+                              <span className="block text-[11px] text-[var(--kh-text-muted)]">
+                                {m.hint}
+                              </span>
                             </span>
                           </label>
                         );
                       })}
                     </div>
                   </fieldset>
-                  <input
-                    placeholder="Numéro Mobile Money"
-                    value={form.mobileMoneyNumber}
-                    onChange={(e) =>
-                      setField("mobileMoneyNumber", e.target.value)
-                    }
-                    className={fieldClass}
-                  />
-                  <input
-                    placeholder="Compte bancaire (optionnel)"
-                    value={form.bankAccount}
-                    onChange={(e) => setField("bankAccount", e.target.value)}
-                    className={fieldClass}
-                  />
+                  {form.acceptedPaymentMethods.includes("MOBILE_MONEY") ? (
+                    <input
+                      placeholder="Numéro Mobile Money"
+                      value={form.mobileMoneyNumber}
+                      onChange={(e) =>
+                        setField("mobileMoneyNumber", e.target.value)
+                      }
+                      className={fieldClass}
+                    />
+                  ) : null}
+                  {form.acceptedPaymentMethods.includes("BANK") ? (
+                    <input
+                      placeholder="Compte bancaire"
+                      value={form.bankAccount}
+                      onChange={(e) => setField("bankAccount", e.target.value)}
+                      className={fieldClass}
+                    />
+                  ) : null}
                 </>
               ) : null}
 

@@ -3,18 +3,15 @@ import { Navigate } from "react-router-dom";
 import { api, uploadFile } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { ID_DOCUMENT_TYPES, isHttpUrl, KYC_LABELS } from "../lib/media";
+import {
+  PAYMENT_METHODS,
+  normalizePaymentMethods,
+} from "../lib/payments";
 import { isValidWhatsAppPhone } from "../lib/phone";
 
 const fieldClass =
   "w-full px-4 py-3 rounded-xl bg-[var(--kh-bg)] border border-[var(--kh-border)] text-[var(--kh-text)] placeholder:text-[var(--kh-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--kh-blue-2)]/40";
 
-const METHODS = [
-  { id: "MPESA", label: "M-Pesa" },
-  { id: "AIRTEL_MONEY", label: "Airtel Money" },
-  { id: "ORANGE_MONEY", label: "Orange Money" },
-  { id: "CARD", label: "Carte" },
-];
-const MM = new Set(["MPESA", "AIRTEL_MONEY", "ORANGE_MONEY"]);
 const FALLBACK_CATEGORIES = [
   { id: "MAISON_DE_PASSAGE", label: "Maison de passage" },
   { id: "GUEST_HOUSE", label: "Guest house" },
@@ -49,9 +46,11 @@ function emptyForm(user) {
     idDocumentUrl: p?.idDocumentUrl || "",
     mobileMoneyNumber: p?.mobileMoneyNumber || "",
     bankAccount: p?.bankAccount || "",
-    acceptedPaymentMethods: p?.acceptedPaymentMethods?.length
-      ? [...p.acceptedPaymentMethods]
-      : ["MPESA"],
+    acceptedPaymentMethods: normalizePaymentMethods(
+      p?.acceptedPaymentMethods?.length
+        ? p.acceptedPaymentMethods
+        : ["MOBILE_MONEY"],
+    ),
   };
 }
 
@@ -149,9 +148,18 @@ export default function ProfilePage() {
       setError("Uploadez votre pièce d’identité.");
       return;
     }
-    const usesMm = form.acceptedPaymentMethods.some((m) => MM.has(m));
+    if (!form.acceptedPaymentMethods.length) {
+      setError("Cochez au moins un mode de paiement accepté.");
+      return;
+    }
+    const usesMm = form.acceptedPaymentMethods.includes("MOBILE_MONEY");
     if (usesMm && !form.mobileMoneyNumber.trim()) {
       setError("Indiquez le numéro Mobile Money.");
+      return;
+    }
+    const usesBank = form.acceptedPaymentMethods.includes("BANK");
+    if (usesBank && !form.bankAccount.trim()) {
+      setError("Indiquez le compte bancaire.");
       return;
     }
     setBusy(true);
@@ -305,16 +313,58 @@ export default function ProfilePage() {
           )}
         </fieldset>
 
-        <div className="grid grid-cols-2 gap-2">
-          {METHODS.map((m) => (
-            <label key={m.id} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.acceptedPaymentMethods.includes(m.id)} onChange={() => toggleMethod(m.id)} />
-              {m.label}
-            </label>
-          ))}
-        </div>
-        <input placeholder="Numéro Mobile Money" value={form.mobileMoneyNumber} onChange={(e) => setField("mobileMoneyNumber", e.target.value)} className={fieldClass} />
-        <input placeholder="Compte bancaire (optionnel)" value={form.bankAccount} onChange={(e) => setField("bankAccount", e.target.value)} className={fieldClass} />
+        <fieldset className="rounded-2xl border border-[var(--kh-border)] p-4 space-y-3">
+          <legend className="px-1 text-sm font-bold text-[var(--kh-primary)]">
+            Modes de paiement acceptés
+          </legend>
+          <p className="text-xs text-[var(--kh-text-muted)]">
+            Comment vous acceptez d’être payé par les clients et par Konnect
+            House.
+          </p>
+          <div className="grid gap-2">
+            {PAYMENT_METHODS.map((m) => (
+              <label
+                key={m.id}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm transition ${
+                  form.acceptedPaymentMethods.includes(m.id)
+                    ? "border-[var(--kh-blue-2)] bg-[var(--kh-blue-2)]/10"
+                    : "border-[var(--kh-border)]"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={form.acceptedPaymentMethods.includes(m.id)}
+                  onChange={() => toggleMethod(m.id)}
+                />
+                <span>
+                  <span className="block font-semibold text-[var(--kh-primary)]">
+                    {m.label}
+                  </span>
+                  <span className="block text-xs text-[var(--kh-text-muted)]">
+                    {m.hint}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          {form.acceptedPaymentMethods.includes("MOBILE_MONEY") ? (
+            <input
+              placeholder="Numéro Mobile Money"
+              value={form.mobileMoneyNumber}
+              onChange={(e) => setField("mobileMoneyNumber", e.target.value)}
+              className={fieldClass}
+            />
+          ) : null}
+          {form.acceptedPaymentMethods.includes("BANK") ? (
+            <input
+              placeholder="Compte bancaire"
+              value={form.bankAccount}
+              onChange={(e) => setField("bankAccount", e.target.value)}
+              className={fieldClass}
+            />
+          ) : null}
+        </fieldset>
 
         {error ? <p className="text-sm text-red-500" role="alert">{error}</p> : null}
         {ok ? <p className="text-sm text-emerald-600">{ok}</p> : null}
