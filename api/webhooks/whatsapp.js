@@ -36,6 +36,7 @@ function extractMessages(body) {
           message.interactive?.button_reply?.id ??
           message.interactive?.list_reply?.id ??
           message.interactive?.button_reply?.title ??
+          message.interactive?.list_reply?.title ??
           "";
         if (phone && text) {
           out.push({ phone: String(phone), text: String(text) });
@@ -46,49 +47,86 @@ function extractMessages(body) {
   return out;
 }
 
-async function forwardOne(url, headers, msg) {
+async function forwardOne(url, headers, payload, timeoutMs = 28_000) {
   const res = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(msg),
-    signal: AbortSignal.timeout(20_000),
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const raw = await res.text();
   return { status: res.status, raw };
 }
 
-async function deliverMessage(headers, msg) {
-  const endpoints = [
-    `${NEST_API_URL}/api/whatsapp/incoming`,
-    `${NEST_API_URL}/api/bot/preview`,
-  ];
-  for (const url of endpoints) {
-    try {
-      const { status, raw } = await forwardOne(url, headers, msg);
-      console.log(
-        "[whatsapp webhook] nest forward",
-        url,
-        msg.phone,
-        status,
-        raw.slice(0, 240),
-      );
-      if (status >= 200 && status < 300) return true;
-    } catch (err) {
-      console.error("[whatsapp webhook] nest forward error:", url, err);
-    }
-  }
-  console.error(
-    "[whatsapp webhook] FAILED to deliver message to Nest",
-    msg.phone,
-  );
-  return false;
-}
-
-async function forwardToNest(messages) {
-  if (!messages.length) return;
+/**
+ * 1) Payload Meta brut → Railway webhook (chemin le plus fiable)
+ * 2) Fallback messages extraits → /whatsapp/incoming puis /bot/preview
+ */
+async function deliverToNest(rawBody, messages) {
   const headers = { "Content-Type": "application/json" };
   if (BOT_SECRET) headers["x-bot-secret"] = BOT_SECRET;
-  await Promise.all(messages.map((msg) => deliverMessage(headers, msg)));
+
+  try {
+    const { status, raw } = await forwardOne(
+      `${NEST_API_URL}/api/webhook/whatsapp`,
+      { "Content-Type": "application/json" },
+      rawBody,
+      28_000,
+    );
+    console.log(
+      "[whatsapp webhook] nest raw webhook",
+      status,
+      raw.slice(0, 240),
+    );
+    if (status >= 200 && status < 300) {
+      try {
+        const parsed = JSON.parse(raw);
+        // Si Nest dit n’avoir rien géré (ex. status-only), tenter extract.
+        if (parsed?.handled === false && messages.length) {
+          /* fall through */
+        } else {
+          return true;
+        }
+      } catch {
+        return true;
+      }
+    }
+  } catch (err) {
+    console.error("[whatsapp webhook] raw forward error:", err);
+  }
+
+  for (const msg of messages) {
+    const endpoints = [
+      `${NEST_API_URL}/api/whatsapp/incoming`,
+      `${NEST_API_URL}/api/bot/preview`,
+    ];
+    let ok = false;
+    for (const url of endpoints) {
+      try {
+        const { status, raw } = await forwardOne(url, headers, msg, 28_000);
+        console.log(
+          "[whatsapp webhook] nest forward",
+          url,
+          msg.phone,
+          status,
+          raw.slice(0, 240),
+        );
+        if (status >= 200 && status < 300) {
+          ok = true;
+          break;
+        }
+      } catch (err) {
+        console.error("[whatsapp webhook] nest forward error:", url, err);
+      }
+    }
+    if (!ok) {
+      console.error(
+        "[whatsapp webhook] FAILED to deliver message to Nest",
+        msg.phone,
+      );
+    }
+  }
+  return messages.length > 0;
 }
 
 export default async function handler(req, res) {
@@ -115,9 +153,10 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
+    let body = {};
     let messages = [];
     try {
-      const body =
+      body =
         typeof req.body === "string"
           ? JSON.parse(req.body || "{}")
           : req.body || {};
@@ -137,9 +176,8 @@ export default async function handler(req, res) {
       console.error("[whatsapp webhook] POST parse error:", err);
     }
 
-    // Traiter d'abord (Nest envoie la réponse WhatsApp), puis ack Meta.
     try {
-      await forwardToNest(messages);
+      await deliverToNest(body, messages);
     } catch (err) {
       console.error("[whatsapp webhook] nest forward error:", err);
     }
