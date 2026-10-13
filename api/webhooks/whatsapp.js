@@ -31,15 +31,22 @@ function extractMessages(body) {
       if (!value?.messages) continue;
       for (const message of value.messages) {
         const phone = value.contacts?.[0]?.wa_id ?? message.from;
+        const profileName = value.contacts?.[0]?.profile?.name || null;
         const text =
           message.text?.body ??
           message.interactive?.button_reply?.id ??
           message.interactive?.list_reply?.id ??
           message.interactive?.button_reply?.title ??
           message.interactive?.list_reply?.title ??
+          message.button?.payload ??
+          message.button?.text ??
           "";
         if (phone && text) {
-          out.push({ phone: String(phone), text: String(text) });
+          out.push({
+            phone: String(phone),
+            text: String(text),
+            profileName: profileName ? String(profileName) : null,
+          });
         }
       }
     }
