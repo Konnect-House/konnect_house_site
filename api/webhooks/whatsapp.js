@@ -8,7 +8,7 @@
 
 const VERIFY_TOKEN =
   process.env.WHATSAPP_VERIFY_TOKEN ||
-  "KonnectHouse_Secure_2025_KH_Verify_X9pL2";
+  "konnecthouse_verify_2026";
 
 const NEST_API_URL = (
   process.env.NEST_API_URL ||
