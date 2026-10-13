@@ -183,6 +183,7 @@ export default async function handler(req, res) {
       console.error("[whatsapp webhook] POST parse error:", err);
     }
 
+    // Await Nest (ACK immédiat côté Railway) AVANT res.end — sinon Vercel gèle le forward.
     try {
       await deliverToNest(body, messages);
     } catch (err) {
