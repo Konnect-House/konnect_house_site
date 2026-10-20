@@ -57,9 +57,18 @@ function gisTextForLabel(label) {
   return "continue_with";
 }
 
+function isCoarsePointer() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(hover: none)").matches ||
+    (navigator.maxTouchPoints || 0) > 0
+  );
+}
+
 /**
- * Bouton Google fiable sur mobile.
- * Le libellé visible est toujours `label` (jamais le texte GIS « Continuer avec Google »).
+ * Bouton Google — mobile : bouton officiel GIS (cliquable).
+ * Desktop : calque GIS transparent au-dessus du libellé custom.
  */
 export default function GoogleButton({
   onCredential,
@@ -70,7 +79,11 @@ export default function GoogleButton({
   const gisRef = useRef(null);
   const onCredentialRef = useRef(onCredential);
   const labelRef = useRef(label);
+  const paintTimer = useRef(null);
+  const lastWidth = useRef(0);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
+  const mobile = isCoarsePointer();
 
   onCredentialRef.current = onCredential;
   labelRef.current = label;
@@ -80,23 +93,12 @@ export default function GoogleButton({
     let cancelled = false;
     let resizeObs;
 
-    const hideGisLayer = () => {
-      if (!gisRef.current) return;
-      gisRef.current.style.opacity = "0";
-      gisRef.current.style.visibility = "hidden";
-    };
-
-    const revealGisLayer = () => {
-      if (!gisRef.current) return;
-      // Couche GIS invisible mais cliquable (iOS n’aime pas opacity:0)
-      gisRef.current.style.visibility = "visible";
-      gisRef.current.style.opacity = "1";
-    };
-
-    const styleTargets = (root) => {
+    const stretchHitTarget = (root) => {
+      if (!root) return;
       const nodes = [
         ...root.querySelectorAll("iframe"),
         ...root.querySelectorAll("div[role='button']"),
+        ...root.querySelectorAll("div"),
       ];
       for (const target of nodes) {
         target.style.position = "absolute";
@@ -104,9 +106,16 @@ export default function GoogleButton({
         target.style.width = "100%";
         target.style.height = "100%";
         target.style.maxWidth = "none";
-        target.style.opacity = "0.02";
+        target.style.minHeight = "48px";
         target.style.cursor = "pointer";
-        target.setAttribute("aria-hidden", "true");
+        target.style.pointerEvents = "auto";
+        // Ne jamais passer sous ~0.02 : iOS ignore les taps sur éléments « invisibles »
+        if (!mobile) {
+          target.style.opacity = "0.02";
+          target.setAttribute("aria-hidden", "true");
+        } else {
+          target.style.opacity = "1";
+        }
       }
     };
 
@@ -118,12 +127,16 @@ export default function GoogleButton({
         Math.floor(hostRef.current.getBoundingClientRect().width),
         280,
       );
+      // Évite de re-rendre pendant un tap (ResizeObserver trop agressif sur mobile)
+      if (Math.abs(width - lastWidth.current) < 8 && gisRef.current.childNodes.length) {
+        return;
+      }
+      lastWidth.current = width;
       if (width < 200) {
         requestAnimationFrame(paint);
         return;
       }
 
-      hideGisLayer();
       gisRef.current.innerHTML = "";
 
       window.google.accounts.id.initialize({
@@ -131,10 +144,12 @@ export default function GoogleButton({
         callback: (res) => {
           if (res?.credential) onCredentialRef.current?.(res.credential);
         },
+        // popup plus fiable que FedCM sur Safari iOS dans un modal
         ux_mode: "popup",
         auto_select: false,
         itp_support: true,
-        use_fedcm_for_prompt: true,
+        use_fedcm_for_prompt: false,
+        cancel_on_tap_outside: true,
       });
 
       window.google.accounts.id.renderButton(gisRef.current, {
@@ -147,27 +162,35 @@ export default function GoogleButton({
         locale: "fr",
       });
 
-      // Masquer le texte GIS avant le prochain paint navigateur
-      styleTargets(gisRef.current);
+      stretchHitTarget(gisRef.current);
+      // L’iframe GIS arrive souvent un tick plus tard
       requestAnimationFrame(() => {
-        if (cancelled || !gisRef.current) return;
-        styleTargets(gisRef.current);
-        revealGisLayer();
+        if (cancelled) return;
+        stretchHitTarget(gisRef.current);
+        setReady(true);
       });
+      setTimeout(() => {
+        if (!cancelled) stretchHitTarget(gisRef.current);
+      }, 150);
+      setTimeout(() => {
+        if (!cancelled) stretchHitTarget(gisRef.current);
+      }, 400);
     };
 
-    hideGisLayer();
+    const schedulePaint = () => {
+      clearTimeout(paintTimer.current);
+      paintTimer.current = setTimeout(paint, mobile ? 180 : 80);
+    };
 
     loadGsiScript()
       .then(() => {
         if (cancelled) return;
         paint();
         if (hostRef.current && typeof ResizeObserver !== "undefined") {
-          resizeObs = new ResizeObserver(() => paint());
+          resizeObs = new ResizeObserver(() => schedulePaint());
           resizeObs.observe(hostRef.current);
         }
-        window.addEventListener("resize", paint);
-        window.addEventListener("orientationchange", paint);
+        window.addEventListener("orientationchange", schedulePaint);
       })
       .catch(() => {
         if (!cancelled) setFailed(true);
@@ -175,51 +198,11 @@ export default function GoogleButton({
 
     return () => {
       cancelled = true;
+      clearTimeout(paintTimer.current);
       resizeObs?.disconnect();
-      window.removeEventListener("resize", paint);
-      window.removeEventListener("orientationchange", paint);
+      window.removeEventListener("orientationchange", schedulePaint);
     };
-  }, []);
-
-  // Re-peindre le bouton GIS si le mode login/register change (sans flash de label)
-  useEffect(() => {
-    if (!CLIENT_ID || !window.google?.accounts?.id || !gisRef.current) return;
-    const width = Math.max(
-      Math.floor(hostRef.current?.getBoundingClientRect().width || 0),
-      280,
-    );
-    if (!gisRef.current) return;
-    gisRef.current.style.visibility = "hidden";
-    gisRef.current.style.opacity = "0";
-    gisRef.current.innerHTML = "";
-    window.google.accounts.id.renderButton(gisRef.current, {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-      shape: "pill",
-      text: gisTextForLabel(label),
-      width,
-      locale: "fr",
-    });
-    const nodes = [
-      ...gisRef.current.querySelectorAll("iframe"),
-      ...gisRef.current.querySelectorAll("div[role='button']"),
-    ];
-    for (const target of nodes) {
-      target.style.position = "absolute";
-      target.style.inset = "0";
-      target.style.width = "100%";
-      target.style.height = "100%";
-      target.style.maxWidth = "none";
-      target.style.opacity = "0.02";
-      target.style.cursor = "pointer";
-    }
-    requestAnimationFrame(() => {
-      if (!gisRef.current) return;
-      gisRef.current.style.visibility = "visible";
-      gisRef.current.style.opacity = "1";
-    });
-  }, [label]);
+  }, [mobile, label]);
 
   if (!CLIENT_ID) {
     return (
@@ -238,6 +221,34 @@ export default function GoogleButton({
     );
   }
 
+  // Mobile : bouton officiel visible (hitbox native Google).
+  if (mobile) {
+    return (
+      <div
+        ref={hostRef}
+        className={`relative w-full min-h-[52px] ${disabled ? "pointer-events-none opacity-60" : ""}`}
+        style={{ touchAction: "manipulation", WebkitTapHighlightColor: "transparent" }}
+      >
+        {!ready ? (
+          <div className="w-full min-h-[52px] flex items-center justify-center gap-3 px-5 py-3.5 rounded-full bg-white text-[#1f1f1f] font-semibold border border-[#dadce0]">
+            <GoogleMark />
+            <span>{label}</span>
+          </div>
+        ) : null}
+        <div
+          ref={gisRef}
+          className="w-full min-h-[52px] flex items-center justify-center [&>div]:w-full [&>div]:flex [&>div]:justify-center"
+          style={{
+            touchAction: "manipulation",
+            minHeight: 52,
+          }}
+          aria-label={label}
+        />
+      </div>
+    );
+  }
+
+  // Desktop : libellé custom + calque GIS transparent
   return (
     <div
       ref={hostRef}
@@ -252,11 +263,10 @@ export default function GoogleButton({
       </div>
       <div
         ref={gisRef}
-        className="absolute inset-0 z-10 overflow-hidden rounded-full"
+        className="absolute inset-0 z-20 rounded-full"
         style={{
           WebkitTapHighlightColor: "transparent",
-          opacity: 0,
-          visibility: "hidden",
+          touchAction: "manipulation",
         }}
       />
     </div>

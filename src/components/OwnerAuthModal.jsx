@@ -75,7 +75,7 @@ export default function OwnerAuthModal() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4"
+          className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: "rgba(10, 14, 26, 0.82)" }}
           onClick={close}
         >
@@ -85,7 +85,8 @@ export default function OwnerAuthModal() {
             exit={{ scale: 0.96, opacity: 0, y: 16 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-[440px] max-h-[min(92dvh,100%)] overflow-y-auto rounded-[1.5rem] sm:rounded-[2rem] bg-[var(--kh-bg-soft)] border border-[var(--kh-border)] shadow-2xl"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="relative w-full max-w-[440px] max-h-[min(92dvh,100%)] overflow-y-auto rounded-t-[1.5rem] sm:rounded-[2rem] bg-[var(--kh-bg-soft)] border border-[var(--kh-border)] shadow-2xl pb-[max(1rem,env(safe-area-inset-bottom))]"
           >
             <div
               className="absolute top-0 left-0 right-0 h-1.5 rounded-t-[2rem]"
@@ -112,7 +113,7 @@ export default function OwnerAuthModal() {
                   ? "Inscription Gmail — un seul tap sur mobile. Si le compte existe déjà, vous serez connecté."
                   : "Connexion Gmail — un seul tap sur mobile. Pas encore de compte ? Il sera créé automatiquement."}
               </p>
-              <div className="mt-7 space-y-4">
+              <div className="mt-7 space-y-4 relative z-20 isolate">
                 <GoogleButton
                   key={mode}
                   label={
