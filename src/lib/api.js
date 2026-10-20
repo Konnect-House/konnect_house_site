@@ -27,8 +27,15 @@ export async function api(path, { token, method = "GET", body } = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (err) {
+    const raw = err instanceof Error ? err.message : "";
+    const network =
+      /load failed|failed to fetch|networkerror|network request failed/i.test(
+        raw,
+      );
     throw new ApiError(
-      err instanceof Error ? err.message : "Réseau indisponible",
+      network
+        ? "Connexion au serveur impossible. Vérifiez le réseau ou rouvrez le site dans Safari/Chrome (pas WhatsApp)."
+        : raw || "Réseau indisponible",
       0,
     );
   }
@@ -60,8 +67,15 @@ export async function uploadFile(path, { token, file, fields = {} } = {}) {
       body: form,
     });
   } catch (err) {
+    const raw = err instanceof Error ? err.message : "";
+    const network =
+      /load failed|failed to fetch|networkerror|network request failed/i.test(
+        raw,
+      );
     throw new ApiError(
-      err instanceof Error ? err.message : "Réseau indisponible",
+      network
+        ? "Connexion au serveur impossible. Vérifiez le réseau ou rouvrez le site dans Safari/Chrome (pas WhatsApp)."
+        : raw || "Réseau indisponible",
       0,
     );
   }
