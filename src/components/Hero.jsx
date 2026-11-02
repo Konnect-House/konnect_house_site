@@ -76,9 +76,10 @@ export default function Hero() {
             variants={item}
             className="mt-4 sm:mt-6 text-base sm:text-lg text-[var(--kh-text)]/90 leading-relaxed max-w-xl"
           >
-            Konnect House est votre assistant immobilier sur WhatsApp. Envoyez
-            un message, décrivez votre besoin, et obtenez en minutes une
-            sélection de logements vérifiés.
+            <strong>Konnect House</strong> est votre assistant immobilier sur
+            WhatsApp à Kinshasa. Maison de passage, appartement, guest house ou
+            hôtel : envoyez un message, décrivez votre besoin, et obtenez en
+            minutes une sélection de logements vérifiés en RDC.
           </motion.p>
 
           <motion.div

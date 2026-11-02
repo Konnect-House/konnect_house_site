@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App.jsx";
+import Seo from "./components/Seo.jsx";
 import { AuthProvider } from "./lib/auth.jsx";
 import { AuthModalProvider } from "./lib/authModal.jsx";
 
@@ -11,6 +12,7 @@ createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthProvider>
         <AuthModalProvider>
+          <Seo />
           <App />
         </AuthModalProvider>
       </AuthProvider>
