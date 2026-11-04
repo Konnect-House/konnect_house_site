@@ -17,6 +17,8 @@ export class ApiError extends Error {
 
 export async function api(path, { token, method = "GET", body } = {}) {
   let res;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 25_000);
   try {
     res = await fetch(apiUrl(path), {
       method,
@@ -25,19 +27,26 @@ export async function api(path, { token, method = "GET", body } = {}) {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
+      signal: ctrl.signal,
     });
   } catch (err) {
     const raw = err instanceof Error ? err.message : "";
+    const aborted = err?.name === "AbortError" || /aborted/i.test(raw);
     const network =
+      aborted ||
       /load failed|failed to fetch|networkerror|network request failed/i.test(
         raw,
       );
     throw new ApiError(
-      network
-        ? "Connexion au serveur impossible. Vérifiez le réseau ou rouvrez le site dans Safari/Chrome (pas WhatsApp)."
-        : raw || "Réseau indisponible",
+      aborted
+        ? "Le serveur met trop de temps à répondre. Réessayez dans un instant."
+        : network
+          ? "Connexion au serveur impossible. Vérifiez le réseau ou rouvrez le site dans Safari/Chrome (pas WhatsApp)."
+          : raw || "Réseau indisponible",
       0,
     );
+  } finally {
+    clearTimeout(timer);
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

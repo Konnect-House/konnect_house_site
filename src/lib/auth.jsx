@@ -39,7 +39,15 @@ export function AuthProvider({ children }) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    // Après Google login, user est déjà en mémoire : ne pas repasser
+    // loading=true sinon écran blanc « Chargement… » sur /proprietaire/*.
+    const cached = readCachedUser();
+    if (cached) {
+      setUser((u) => u || cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     api("/auth/me", { token })
       .then((data) => {
         if (cancelled) return;
@@ -88,10 +96,15 @@ export function AuthProvider({ children }) {
           method: "POST",
           body: { credential },
         });
+        if (!res?.token || !res?.data) {
+          throw new Error("Réponse Google invalide. Réessayez.");
+        }
+        // Hydrater le cache AVANT setToken pour éviter l’écran blanc (loading).
         localStorage.setItem(KEY, res.token);
         writeCachedUser(res.data);
-        setToken(res.token);
         setUser(res.data);
+        setLoading(false);
+        setToken(res.token);
         return res;
       },
       async completeOnboarding(payload) {

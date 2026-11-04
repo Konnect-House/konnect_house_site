@@ -44,11 +44,14 @@ export default function OwnerAuthModal() {
         );
         return;
       }
+      const dest = res.data?.needsOnboarding
+        ? "/proprietaire/onboarding"
+        : "/proprietaire";
+      // Fermer le modal puis naviguer au tick suivant (évite écran blanc iOS)
       close();
-      navigate(
-        res.data?.needsOnboarding ? "/proprietaire/onboarding" : "/proprietaire",
-        { replace: true },
-      );
+      window.setTimeout(() => {
+        navigate(dest, { replace: true });
+      }, 50);
     },
     [close, logout, navigate],
   );

@@ -17,7 +17,16 @@ export default function OnboardingPage() {
     };
   }, []);
 
-  if (user?.role === "PROVIDER" && !user.needsOnboarding) {
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-[#0A0E1A] text-white">
+        <div className="h-10 w-10 rounded-full border-4 border-[#66CAE4] border-t-transparent animate-spin" />
+        <p className="text-sm font-semibold text-white/80">Préparation de votre dossier…</p>
+      </div>
+    );
+  }
+
+  if (user.role === "PROVIDER" && !user.needsOnboarding) {
     return <Navigate to="/proprietaire" replace />;
   }
 

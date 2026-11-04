@@ -5,10 +5,16 @@ export default function RequireProvider() {
   const { token, loading, user } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading && !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-[var(--kh-text-muted)]">
-        Chargement…
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 bg-[var(--kh-bg)]">
+        <div
+          className="h-10 w-10 rounded-full border-4 border-[var(--kh-blue-2)] border-t-transparent animate-spin"
+          aria-hidden
+        />
+        <p className="text-sm font-semibold text-[var(--kh-primary)]">
+          Connexion en cours…
+        </p>
       </div>
     );
   }
