@@ -23,7 +23,7 @@ export default function NewPropertyPage() {
     setBusy(true);
     try {
       await api("/properties", { token, method: "POST", body: payload });
-      navigate("/proprietaire", { replace: true });
+      navigate("/proprietaire/gestion", { replace: true });
     } catch (err) {
       setError(err.message || "Publication impossible.");
     } finally {
@@ -31,10 +31,30 @@ export default function NewPropertyPage() {
     }
   }
 
+  if (user?.status === "PENDING") {
+    return (
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <Link
+          to="/proprietaire/gestion"
+          className="text-sm font-semibold text-[var(--kh-blue-2)]"
+        >
+          ← Mes logements
+        </Link>
+        <h1 className="mt-4 text-2xl font-extrabold text-[var(--kh-primary)]">
+          Compte en attente
+        </h1>
+        <p className="mt-2 text-[var(--kh-text-muted)]">
+          Votre compte n’est pas encore validé par un administrateur. Vous
+          pourrez publier un logement dès l’activation.
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <Link
-        to="/proprietaire"
+        to="/proprietaire/gestion"
         className="text-sm font-semibold text-[var(--kh-blue-2)]"
       >
         ← Mes logements

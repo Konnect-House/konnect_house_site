@@ -90,11 +90,13 @@ export default function Seo() {
       title = "Inscription propriétaire | Konnect House Kinshasa";
       description =
         "Créez votre espace propriétaire Konnect House et publiez vos logements à Kinshasa.";
-      path = "/?auth=inscription";
+      path = "/";
+      robots = "noindex, follow";
     } else if (pathname === "/" && auth === "connexion") {
       title = "Connexion propriétaire | Konnect House";
       description = "Connectez-vous à votre espace propriétaire Konnect House.";
-      path = "/?auth=connexion";
+      path = "/";
+      robots = "noindex, follow";
     }
 
     document.title = title;

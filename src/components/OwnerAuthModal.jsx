@@ -58,14 +58,25 @@ export default function OwnerAuthModal() {
       setError("");
       setBusy(true);
       try {
-        goAfterAuth(await googleProvider(credential));
+        const res = await googleProvider(credential);
+        const next = new URLSearchParams(window.location.search).get("next");
+        if (
+          res.data?.role === "PROVIDER" &&
+          !res.data?.needsOnboarding &&
+          next?.startsWith("/proprietaire")
+        ) {
+          close();
+          navigate(next, { replace: true });
+          return;
+        }
+        goAfterAuth(res);
       } catch (err) {
         setError(err.message || "Connexion Google impossible.");
       } finally {
         setBusy(false);
       }
     },
-    [goAfterAuth, googleProvider],
+    [close, goAfterAuth, googleProvider, navigate],
   );
 
   return (
@@ -77,7 +88,9 @@ export default function OwnerAuthModal() {
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center p-0 sm:p-4"
           style={{ background: "rgba(10, 14, 26, 0.82)" }}
-          onClick={close}
+          onClick={() => {
+            if (!busy) close();
+          }}
         >
           <motion.div
             initial={{ scale: 0.96, opacity: 0, y: 20 }}

@@ -69,7 +69,13 @@ function IconUser({ className }) {
 const NAV = [
   { to: "/proprietaire", label: "Accueil", Icon: IconHome, end: true },
   { to: "/proprietaire/gestion", label: "Mes biens", Icon: IconDashboard, end: true },
-  { to: "/proprietaire/biens/nouveau", label: "Nouveau bien", Icon: IconPlus, end: false },
+  {
+    to: "/proprietaire/biens/nouveau",
+    label: "Nouveau bien",
+    Icon: IconPlus,
+    end: false,
+    hideWhenPending: true,
+  },
   { to: "/proprietaire/profil", label: "Profil", Icon: IconUser, end: true },
 ];
 
@@ -177,7 +183,10 @@ export default function ProviderLayout() {
 
         <nav className={`flex-1 space-y-1 overflow-y-auto px-3 py-4 ${collapsed ? "lg:px-2" : ""}`}>
           {user
-            ? NAV.map(({ to, label, Icon, end }) => (
+            ? NAV.filter(
+                (item) =>
+                  !(item.hideWhenPending && user.status === "PENDING"),
+              ).map(({ to, label, Icon, end }) => (
                 <NavLink
                   key={to}
                   to={to}

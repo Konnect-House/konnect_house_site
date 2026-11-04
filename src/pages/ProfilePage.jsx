@@ -10,7 +10,7 @@ export default function ProfilePage() {
   const [ok, setOk] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (!user) return <Navigate to="/" replace />;
+  if (!user) return <Navigate to="/?auth=connexion" replace />;
 
   async function onSubmit(payload) {
     setOk("");

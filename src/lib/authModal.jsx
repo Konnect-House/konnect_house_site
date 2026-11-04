@@ -27,7 +27,10 @@ export function AuthModalProvider({ children }) {
     if (location.pathname === "/") {
       const params = new URLSearchParams(searchParams);
       if (auth) params.set("auth", auth);
-      else params.delete("auth");
+      else {
+        params.delete("auth");
+        params.delete("next");
+      }
       setSearchParams(params, { replace: true });
       return;
     }
@@ -37,12 +40,20 @@ export function AuthModalProvider({ children }) {
   useEffect(() => {
     if (loading || !mode) return;
     if (token && (user?.role === "PROVIDER" || user?.role === "ADMIN")) {
-      navigate(
-        user.needsOnboarding ? "/proprietaire/onboarding" : "/proprietaire",
-        { replace: true },
-      );
+      const nextRaw = searchParams.get("next");
+      let dest = user.needsOnboarding
+        ? "/proprietaire/onboarding"
+        : "/proprietaire";
+      if (
+        !user.needsOnboarding &&
+        nextRaw &&
+        nextRaw.startsWith("/proprietaire")
+      ) {
+        dest = nextRaw;
+      }
+      navigate(dest, { replace: true });
     }
-  }, [loading, mode, token, user, navigate]);
+  }, [loading, mode, token, user, navigate, searchParams]);
 
   const value = {
     mode,

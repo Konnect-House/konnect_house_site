@@ -66,9 +66,18 @@ function isCoarsePointer() {
   );
 }
 
+/** Navigateur intégré WhatsApp / Instagram / Facebook / etc. */
+function isInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  return /WhatsApp|FBAN|FBAV|Instagram|Line\/|Twitter|LinkedInApp|Snapchat|Pinterest|MicroMessenger|TikTok/i.test(
+    ua,
+  );
+}
+
 /**
- * Bouton Google — mobile : bouton officiel GIS (cliquable).
- * Desktop : calque GIS transparent au-dessus du libellé custom.
+ * Bouton Google — mobile : bouton officiel GIS.
+ * WebView (WhatsApp…) : invite à ouvrir Safari/Chrome.
  */
 export default function GoogleButton({
   onCredential,
@@ -79,17 +88,19 @@ export default function GoogleButton({
   const gisRef = useRef(null);
   const onCredentialRef = useRef(onCredential);
   const labelRef = useRef(label);
+  const initialized = useRef(false);
   const paintTimer = useRef(null);
   const lastWidth = useRef(0);
   const [failed, setFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const mobile = isCoarsePointer();
+  const inApp = isInAppBrowser();
 
   onCredentialRef.current = onCredential;
   labelRef.current = label;
 
   useEffect(() => {
-    if (!CLIENT_ID) return undefined;
+    if (!CLIENT_ID || inApp) return undefined;
     let cancelled = false;
     let resizeObs;
 
@@ -98,7 +109,6 @@ export default function GoogleButton({
       const nodes = [
         ...root.querySelectorAll("iframe"),
         ...root.querySelectorAll("div[role='button']"),
-        ...root.querySelectorAll("div"),
       ];
       for (const target of nodes) {
         target.style.position = "absolute";
@@ -109,7 +119,6 @@ export default function GoogleButton({
         target.style.minHeight = "48px";
         target.style.cursor = "pointer";
         target.style.pointerEvents = "auto";
-        // Ne jamais passer sous ~0.02 : iOS ignore les taps sur éléments « invisibles »
         if (!mobile) {
           target.style.opacity = "0.02";
           target.setAttribute("aria-hidden", "true");
@@ -119,16 +128,36 @@ export default function GoogleButton({
       }
     };
 
+    const ensureInit = () => {
+      if (!window.google?.accounts?.id) return false;
+      if (initialized.current) return true;
+      window.google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: (res) => {
+          if (res?.credential) onCredentialRef.current?.(res.credential);
+        },
+        ux_mode: "popup",
+        auto_select: false,
+        itp_support: true,
+        use_fedcm_for_prompt: false,
+        cancel_on_tap_outside: true,
+      });
+      initialized.current = true;
+      return true;
+    };
+
     const paint = () => {
       if (cancelled || !gisRef.current || !hostRef.current) return;
-      if (!window.google?.accounts?.id) return;
+      if (!ensureInit()) return;
 
       const width = Math.max(
         Math.floor(hostRef.current.getBoundingClientRect().width),
         280,
       );
-      // Évite de re-rendre pendant un tap (ResizeObserver trop agressif sur mobile)
-      if (Math.abs(width - lastWidth.current) < 8 && gisRef.current.childNodes.length) {
+      if (
+        Math.abs(width - lastWidth.current) < 12 &&
+        gisRef.current.childNodes.length
+      ) {
         return;
       }
       lastWidth.current = width;
@@ -138,20 +167,6 @@ export default function GoogleButton({
       }
 
       gisRef.current.innerHTML = "";
-
-      window.google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: (res) => {
-          if (res?.credential) onCredentialRef.current?.(res.credential);
-        },
-        // popup plus fiable que FedCM sur Safari iOS dans un modal
-        ux_mode: "popup",
-        auto_select: false,
-        itp_support: true,
-        use_fedcm_for_prompt: false,
-        cancel_on_tap_outside: true,
-      });
-
       window.google.accounts.id.renderButton(gisRef.current, {
         type: "standard",
         theme: "outline",
@@ -163,23 +178,18 @@ export default function GoogleButton({
       });
 
       stretchHitTarget(gisRef.current);
-      // L’iframe GIS arrive souvent un tick plus tard
       requestAnimationFrame(() => {
-        if (cancelled) return;
-        stretchHitTarget(gisRef.current);
+        if (!cancelled) stretchHitTarget(gisRef.current);
         setReady(true);
       });
       setTimeout(() => {
         if (!cancelled) stretchHitTarget(gisRef.current);
-      }, 150);
-      setTimeout(() => {
-        if (!cancelled) stretchHitTarget(gisRef.current);
-      }, 400);
+      }, 200);
     };
 
     const schedulePaint = () => {
       clearTimeout(paintTimer.current);
-      paintTimer.current = setTimeout(paint, mobile ? 180 : 80);
+      paintTimer.current = setTimeout(paint, mobile ? 220 : 100);
     };
 
     loadGsiScript()
@@ -202,7 +212,7 @@ export default function GoogleButton({
       resizeObs?.disconnect();
       window.removeEventListener("orientationchange", schedulePaint);
     };
-  }, [mobile, label]);
+  }, [mobile, label, inApp]);
 
   if (!CLIENT_ID) {
     return (
@@ -210,6 +220,28 @@ export default function GoogleButton({
         Connexion Gmail bientôt disponible. Ajoutez{" "}
         <code className="font-semibold">VITE_GOOGLE_CLIENT_ID</code> sur Vercel.
       </p>
+    );
+  }
+
+  if (inApp) {
+    const openUrl =
+      typeof window !== "undefined" ? window.location.href : "https://www.konnecthouse.cd/";
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-center text-[var(--kh-text-muted)] leading-relaxed">
+          Google ne fonctionne pas dans WhatsApp. Ouvrez ce lien dans{" "}
+          <strong>Safari</strong> ou <strong>Chrome</strong>, puis reconnectez-vous.
+        </p>
+        <a
+          href={openUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full min-h-[52px] flex items-center justify-center gap-3 px-5 py-3.5 rounded-full bg-white text-[#1f1f1f] font-semibold border border-[#dadce0] shadow-sm"
+        >
+          <GoogleMark />
+          Ouvrir dans le navigateur
+        </a>
+      </div>
     );
   }
 
@@ -221,7 +253,6 @@ export default function GoogleButton({
     );
   }
 
-  // Mobile : bouton officiel visible (hitbox native Google).
   if (mobile) {
     return (
       <div
@@ -238,17 +269,13 @@ export default function GoogleButton({
         <div
           ref={gisRef}
           className="w-full min-h-[52px] flex items-center justify-center [&>div]:w-full [&>div]:flex [&>div]:justify-center"
-          style={{
-            touchAction: "manipulation",
-            minHeight: 52,
-          }}
+          style={{ touchAction: "manipulation", minHeight: 52 }}
           aria-label={label}
         />
       </div>
     );
   }
 
-  // Desktop : libellé custom + calque GIS transparent
   return (
     <div
       ref={hostRef}
