@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { KYC_LABELS } from "../lib/media";
+import { displayPropertyName } from "../lib/propertyName";
 
 function money(n) {
   const v = Number(n) || 0;
@@ -209,7 +210,9 @@ export default function ProviderHomePage() {
                 className="flex flex-col gap-1 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-bold text-[var(--kh-primary)]">{row.name}</p>
+                  <p className="font-bold text-[var(--kh-primary)]">
+                    {displayPropertyName(row.name)}
+                  </p>
                   <p className="text-xs text-[var(--kh-text-muted)]">
                     {row.bookings} réservation(s)
                   </p>

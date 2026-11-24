@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { displayPropertyName } from "../lib/propertyName";
 
 const STATUS = {
   PENDING_REVIEW: "En vérification",
@@ -187,7 +188,7 @@ export default function DashboardPage() {
                       {STATUS[p.status] || p.status}
                     </p>
                     <h2 className="mt-1 text-lg font-bold text-[var(--kh-primary)]">
-                      {p.name}
+                      {displayPropertyName(p.name)}
                     </h2>
                     <p className="mt-1 text-sm text-[var(--kh-text-muted)]">
                       {[p.city, p.commune].filter(Boolean).join(" · ")} · {p.rooms}{" "}
@@ -219,7 +220,7 @@ export default function DashboardPage() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                   <p className="font-bold text-[var(--kh-primary)]">
-                    {b.property?.name || "Logement"}
+                    {displayPropertyName(b.property?.name) || "Logement"}
                   </p>
                   <p className="text-sm text-[var(--kh-text-muted)]">
                     {b.client?.fullName || "Client"} ·{" "}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
+import { displayPropertyName } from "../lib/propertyName";
 
 const STATUS = {
   PENDING_REVIEW: "En vérification",
@@ -91,7 +92,7 @@ export default function PropertyDetailPage() {
             {STATUS[property.status] || property.status}
           </p>
           <h1 className="mt-1 text-3xl font-extrabold text-[var(--kh-primary)]">
-            {property.name}
+            {displayPropertyName(property.name)}
           </h1>
           <p className="mt-2 text-[var(--kh-text-muted)]">
             {[property.city, property.commune].filter(Boolean).join(" · ")} ·{" "}
